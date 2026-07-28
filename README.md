@@ -1,5 +1,7 @@
 # ARIA
 
+*Autonomous Research Intelligence Agent*
+
 Ask a language model to analyze a dataset and it will confidently reach for the same three or four familiar methods, regardless of what the data actually looks like or what the specialist literature on the problem actually recommends. It will happily tell you it checked the assumptions. It usually didn't. And if the analysis is wrong, nothing in the loop is built to notice, because nothing is checking that the model's claims match what it actually ran.
 
 That's the problem ARIA is built to answer. Not "can an LLM write pandas code" — it obviously can — but whether an autonomous agent can be trusted to do the more uncomfortable parts of science: go find out what's actually known about a problem, implement that faithfully instead of reaching for a shortcut, hold the result to a standard that can't be gamed by looking good on some other axis, and say "I don't know" out loud when it doesn't know.
