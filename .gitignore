@@ -16,6 +16,9 @@ __pycache__/
 tmp/*
 !tmp/.gitkeep
 
+# Default run-log output location (run_one_loop.py's own --run-log default)
+data/outputs/
+
 # Paper source and any PDFs are not distributed through this repo.
 research-paper/
 *.pdf
