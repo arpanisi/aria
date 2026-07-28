@@ -1,0 +1,14 @@
+We describe a bootstrap stability screening procedure for scarce tabular
+regression data. The analyst first constructs a complete-case design matrix for
+the proposed numeric outcome and candidate numeric predictors. Fully missing
+rows are removed, numeric-like fields are coerced, and predictors with zero
+variance are excluded. The method then draws repeated bootstrap samples with
+replacement from the complete-case data. In each bootstrap sample, an
+interpretable regression model is fit and the coefficient signs are recorded.
+Variables whose coefficient signs are stable across bootstrap samples are
+retained. The final model is fit on the complete-case data and evaluated using
+held-out or cross-validated fit. The method reports the number of complete
+cases, the number of bootstrap samples, coefficient sign stability, final fit
+metrics, diagnostics, robustness summaries, and warnings. The assumptions are
+that enough complete cases exist for resampling and that the outcome and
+candidate predictors are not constant.

@@ -1,0 +1,139 @@
+{
+  "candidate": {},
+  "dataset_profile": {
+    "n_rows": 100,
+    "n_cols": 10,
+    "fully_empty_rows": 0,
+    "dtypes": {
+      "season": "float64",
+      "age": "float64",
+      "childish_diseases": "int64",
+      "accident_or_serious_trauma": "int64",
+      "surgical_intervention": "int64",
+      "high_fevers_last_year": "int64",
+      "alcohol_frequency": "float64",
+      "smoking_habit": "int64",
+      "hours_sitting_per_day": "float64",
+      "fertility_diagnosis": "str"
+    },
+    "numeric_columns": [
+      "season",
+      "age",
+      "childish_diseases",
+      "accident_or_serious_trauma",
+      "surgical_intervention",
+      "high_fevers_last_year",
+      "alcohol_frequency",
+      "smoking_habit",
+      "hours_sitting_per_day"
+    ],
+    "categorical_columns": [
+      "fertility_diagnosis"
+    ],
+    "constant_columns": [],
+    "near_constant_columns": [],
+    "missingness": {
+      "season": 0.0,
+      "age": 0.0,
+      "childish_diseases": 0.0,
+      "accident_or_serious_trauma": 0.0,
+      "surgical_intervention": 0.0,
+      "high_fevers_last_year": 0.0,
+      "alcohol_frequency": 0.0,
+      "smoking_habit": 0.0,
+      "hours_sitting_per_day": 0.0,
+      "fertility_diagnosis": 0.0
+    },
+    "high_missingness_columns": [],
+    "high_cardinality_categoricals": [],
+    "structural_columns": [],
+    "numeric_identifier_like_columns": [],
+    "numeric_like_columns": [],
+    "integer_valued_columns": [
+      "childish_diseases",
+      "accident_or_serious_trauma",
+      "surgical_intervention",
+      "high_fevers_last_year",
+      "smoking_habit"
+    ],
+    "n_unique": {
+      "season": 4,
+      "age": 18,
+      "childish_diseases": 2,
+      "accident_or_serious_trauma": 2,
+      "surgical_intervention": 2,
+      "high_fevers_last_year": 3,
+      "alcohol_frequency": 5,
+      "smoking_habit": 3,
+      "hours_sitting_per_day": 14,
+      "fertility_diagnosis": 2
+    },
+    "candidate_entity_columns": [],
+    "candidate_time_columns": [
+      "hours_sitting_per_day"
+    ],
+    "repeated_measures": {
+      "detected": false,
+      "entity_column": null,
+      "time_column": null,
+      "n_entities": 0,
+      "n_time_values": 0,
+      "balanced": false,
+      "reason": "no repeated entity/time structure detected"
+    },
+    "complete_case_loss": {
+      "columns_considered": [
+        "season",
+        "age",
+        "childish_diseases",
+        "accident_or_serious_trauma",
+        "surgical_intervention",
+        "high_fevers_last_year",
+        "alcohol_frequency",
+        "smoking_habit",
+        "hours_sitting_per_day"
+      ],
+      "complete_rows": 100,
+      "loss_fraction": 0.0
+    },
+    "target_suggestions": [
+      "smoking_habit",
+      "season",
+      "high_fevers_last_year",
+      "surgical_intervention",
+      "accident_or_serious_trauma",
+      "childish_diseases",
+      "hours_sitting_per_day",
+      "alcohol_frequency"
+    ],
+    "warnings": []
+  },
+  "data_evidence": [],
+  "expected_retrieval_descriptor": {
+    "sample_size_bucket": "small sample",
+    "n_rows": 100,
+    "n_cols": 10,
+    "dimensionality_bucket": "low dimensional tabular",
+    "predictor_count_bucket": "few variables",
+    "sample_to_feature_bucket": "moderate sample to feature ratio",
+    "n_numeric_columns": 9,
+    "n_categorical_columns": 1,
+    "has_mixed_column_types": true,
+    "has_high_missingness": false,
+    "has_repeated_measures": false,
+    "has_time_columns": false,
+    "outcome_description": "outcome column not yet selected",
+    "outcome_n_levels": null,
+    "selected_method": null,
+    "n_tests": null,
+    "uses_fdr": false,
+    "diagnostics": [
+      "cross validated accuracy",
+      "cross validated r squared",
+      "residual diagnostics",
+      "calibration",
+      "bootstrap stability",
+      "resampling"
+    ]
+  }
+}

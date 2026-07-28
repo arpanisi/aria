@@ -1,0 +1,846 @@
+<title>ARIA: How the Terminal Reward Is Built</title>
+<style>
+  :root {
+    --ground: #F6F7F9;
+    --ground-alt: #EDEFF3;
+    --panel: #FFFFFF;
+    --border: #DCE1E8;
+    --ink: #1A2129;
+    --ink-muted: #5B6673;
+    --ink-faint: #8B96A3;
+    --accent: #0E7C86;
+    --accent-ink: #075158;
+    --accent-soft: #E3F1F1;
+    --pass: #3F8F5F;
+    --pass-soft: #E7F3EB;
+    --fail: #B8503E;
+    --fail-soft: #FBEAE6;
+    --partial: #A9822C;
+    --partial-soft: #FAF2E0;
+    --neutral: #5B6673;
+    --neutral-soft: #ECEEF1;
+    --shadow: 0 1px 2px rgba(20, 26, 33, 0.05), 0 4px 14px rgba(20, 26, 33, 0.04);
+    --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    --font-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #10141B;
+      --ground-alt: #151A22;
+      --panel: #171D26;
+      --border: #262E39;
+      --ink: #E8ECF2;
+      --ink-muted: #93A0AF;
+      --ink-faint: #647186;
+      --accent: #55D8E0;
+      --accent-ink: #B7F1F4;
+      --accent-soft: #16333A;
+      --pass: #74D19A;
+      --pass-soft: #17281F;
+      --fail: #E6947C;
+      --fail-soft: #2C1D19;
+      --partial: #DEBD65;
+      --partial-soft: #2B2416;
+      --neutral: #93A0AF;
+      --neutral-soft: #1C222C;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 20px rgba(0, 0, 0, 0.25);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #10141B; --ground-alt: #151A22; --panel: #171D26; --border: #262E39;
+    --ink: #E8ECF2; --ink-muted: #93A0AF; --ink-faint: #647186;
+    --accent: #55D8E0; --accent-ink: #B7F1F4; --accent-soft: #16333A;
+    --pass: #74D19A; --pass-soft: #17281F; --fail: #E6947C; --fail-soft: #2C1D19;
+    --partial: #DEBD65; --partial-soft: #2B2416; --neutral: #93A0AF; --neutral-soft: #1C222C;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.25);
+  }
+  :root[data-theme="light"] {
+    --ground: #F6F7F9; --ground-alt: #EDEFF3; --panel: #FFFFFF; --border: #DCE1E8;
+    --ink: #1A2129; --ink-muted: #5B6673; --ink-faint: #8B96A3;
+    --accent: #0E7C86; --accent-ink: #075158; --accent-soft: #E3F1F1;
+    --pass: #3F8F5F; --pass-soft: #E7F3EB; --fail: #B8503E; --fail-soft: #FBEAE6;
+    --partial: #A9822C; --partial-soft: #FAF2E0; --neutral: #5B6673; --neutral-soft: #ECEEF1;
+    --shadow: 0 1px 2px rgba(20,26,33,0.05), 0 4px 14px rgba(20,26,33,0.04);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.5;
+  }
+  ::selection { background: var(--accent-soft); color: var(--accent-ink); }
+
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 3rem 1.75rem 6rem;
+  }
+
+  /* ---------- header ---------- */
+  header.hero {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2.25rem;
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(1.7rem, 3vw, 2.35rem);
+    margin: 0;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  .dek {
+    font-size: 1.02rem;
+    color: var(--ink-muted);
+    max-width: 62ch;
+    margin: 0;
+  }
+  .readout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-top: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--panel);
+    box-shadow: var(--shadow);
+  }
+  .readout .stat {
+    flex: 1 1 150px;
+    padding: 0.8rem 1.1rem;
+    border-right: 1px solid var(--border);
+  }
+  .readout .stat:last-child { border-right: none; }
+  .readout .stat .n {
+    font-family: var(--font-mono);
+    font-size: 1.28rem;
+    color: var(--ink);
+    display: block;
+  }
+  .readout .stat .l {
+    font-size: 0.73rem;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ---------- sections ---------- */
+  section { margin-bottom: 3rem; }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.35rem;
+    margin: 0;
+  }
+  .section-note {
+    font-size: 0.88rem;
+    color: var(--ink-muted);
+    max-width: 46ch;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+  }
+
+  /* ---------- legend ---------- */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.1rem;
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    margin-bottom: 1.1rem;
+  }
+  .legend .item { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .swatch { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+  .swatch.line { width: 16px; height: 2px; border-radius: 1px; }
+
+  /* ---------- timeline / gantt ---------- */
+  .timeline-scroll { overflow-x: auto; }
+  .timeline {
+    position: relative;
+    min-width: 760px;
+    padding-top: 0.4rem;
+  }
+  .fork-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    border-left: 1.5px dashed var(--accent);
+    opacity: 0.55;
+    z-index: 1;
+  }
+  .fork-label {
+    position: absolute;
+    top: -0.1rem;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--accent);
+    background: var(--panel);
+    padding: 0 0.3rem;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 2;
+  }
+  .cluster { margin-bottom: 0.5rem; }
+  .cluster-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.55rem 0 0.2rem 0;
+  }
+  .lane {
+    position: relative;
+    height: 30px;
+    display: flex;
+    align-items: center;
+  }
+  .lane-label {
+    position: absolute;
+    left: -0.2rem;
+    transform: translateX(-100%);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    padding-right: 0.6rem;
+    width: 0;
+  }
+  .lane-track { position: relative; height: 100%; width: 100%; }
+  .lane-connector {
+    position: absolute;
+    top: 50%;
+    height: 1.5px;
+    background: var(--border);
+    transform: translateY(-50%);
+    z-index: 1;
+  }
+  .lane.featured .lane-connector { background: var(--accent); opacity: 0.5; }
+  .node {
+    position: absolute;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    border: 1.5px solid var(--panel);
+    z-index: 2;
+    cursor: default;
+  }
+  .node.finalize {
+    width: 11px; height: 11px;
+    border-radius: 3px;
+    transform: translate(-50%, -50%) rotate(45deg);
+    background: var(--accent) !important;
+    z-index: 3;
+  }
+  .node:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 130%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: var(--ground);
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 5px;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .outcome-chip {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    padding: 0.15rem 0.5rem 0.15rem 0.4rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    z-index: 2;
+  }
+  .outcome-chip .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .outcome-chip.fail { background: var(--fail-soft); color: var(--fail); border-color: var(--fail); }
+  .outcome-chip.partial { background: var(--partial-soft); color: var(--partial); border-color: var(--partial); }
+  .outcome-chip.neutral { background: var(--neutral-soft); color: var(--neutral); border-color: var(--neutral); }
+  .outcome-chip .dot.fail { background: var(--fail); }
+  .outcome-chip .dot.partial { background: var(--partial); }
+  .outcome-chip .dot.neutral { background: var(--neutral); }
+
+  .axis {
+    position: relative;
+    height: 22px;
+    margin-top: 0.35rem;
+    border-top: 1px solid var(--border);
+  }
+  .axis .tick {
+    position: absolute;
+    top: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    transform: translateX(-50%);
+  }
+
+  .callout {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1rem 0 0;
+    font-size: 0.82rem;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
+  }
+  .callout svg { flex: none; }
+
+  /* ---------- reward composition ---------- */
+  .composition {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+  .funnel {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 1.25rem 0.5rem;
+  }
+  .funnel .terms {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+    gap: 0.55rem;
+    flex: 1 1 340px;
+  }
+  .term {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    background: var(--ground-alt);
+  }
+  .term .sym { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-muted); }
+  .term .val { font-family: var(--font-mono); font-size: 1.2rem; display: block; margin-top: 0.15rem; }
+  .term .label { font-size: 0.72rem; color: var(--ink-faint); }
+  .arrow-to-r {
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: 1.3rem;
+    color: var(--ink-faint);
+    padding: 0 0.3rem;
+  }
+  .r-badge {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 148px;
+    height: 148px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--accent-soft), var(--panel) 72%);
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 6px var(--accent-soft);
+  }
+  .r-badge .sym { font-family: var(--font-mono); color: var(--accent-ink); font-size: 0.85rem; }
+  .r-badge .val { font-family: var(--font-mono); font-size: 2rem; color: var(--accent-ink); font-weight: 600; }
+  .r-badge .sub { font-size: 0.62rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.15rem; }
+  .formula-note {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    margin-top: 0.9rem;
+  }
+
+  /* ---------- tree explorer ---------- */
+  .tree-tabs {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.9rem;
+  }
+  .tree-tab {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--ground-alt);
+    color: var(--ink-muted);
+    cursor: pointer;
+  }
+  .tree-tab.active { background: var(--accent); color: var(--panel); border-color: var(--accent); }
+  .tree-summary {
+    display: flex;
+    gap: 1.4rem;
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    margin-bottom: 0.9rem;
+    flex-wrap: wrap;
+  }
+  .tree-summary b { color: var(--ink); font-family: var(--font-mono); }
+  .tree-root { border-top: 1px solid var(--border); }
+  .tnode { border-bottom: 1px solid var(--border); }
+  .tnode-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.5rem 0.15rem;
+    cursor: pointer;
+  }
+  .tnode-row:hover { background: var(--ground-alt); }
+  .chev {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-faint);
+    transition: transform 0.12s ease;
+    font-size: 0.7rem;
+  }
+  .tnode.open > .tnode-row .chev { transform: rotate(90deg); }
+  .tnode.leaf > .tnode-row .chev { visibility: hidden; }
+  .tname { font-size: 0.86rem; }
+  .tdesc { color: var(--ink-faint); font-size: 0.78rem; margin-left: 0.4rem; }
+  .tchip {
+    margin-left: auto;
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+  }
+  .tchip.pass { background: var(--pass-soft); color: var(--pass); border-color: var(--pass); }
+  .tchip.fail { background: var(--fail-soft); color: var(--fail); border-color: var(--fail); }
+  .tchip.partial { background: var(--partial-soft); color: var(--partial); border-color: var(--partial); }
+  .tchildren { display: none; padding-left: 1.25rem; border-left: 1px dashed var(--border); margin-left: 0.6rem; }
+  .tnode.open > .tchildren { display: block; }
+  .tevidence {
+    display: none;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--ink-muted);
+    background: var(--ground-alt);
+    border-radius: 6px;
+    padding: 0.45rem 0.6rem;
+    margin: 0 0 0.4rem 1.9rem;
+    max-width: 62ch;
+    word-break: break-word;
+  }
+  .tnode.open.show-ev > .tevidence { display: block; }
+
+  /* ---------- broadcast toggle ---------- */
+  .toggle-row { display: flex; align-items: center; gap: 0.6rem; margin-top: 1rem; }
+  .toggle {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--accent);
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    cursor: pointer;
+  }
+  .toggle-note { font-size: 0.78rem; color: var(--ink-muted); }
+  svg.broadcast-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 5;
+  }
+  svg.broadcast-layer path {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.4;
+    stroke-dasharray: 4 3;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  body.show-broadcast svg.broadcast-layer path { opacity: 0.75; }
+
+  footer {
+    border-top: 1px solid var(--border);
+    margin-top: 3rem;
+    padding-top: 1.25rem;
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    max-width: 72ch;
+  }
+  footer p { margin: 0.4rem 0; }
+  code { font-family: var(--font-mono); background: var(--ground-alt); padding: 0.05rem 0.3rem; border-radius: 4px; font-size: 0.92em; }
+
+  @media (min-width: 900px) {
+    .composition { grid-template-columns: 0.85fr 1.15fr; align-items: start; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="hero">
+    <span class="eyebrow">ARIA &middot; Trajectory Reward &middot; query-policy-full-001</span>
+    <h1>How ARIA's Terminal Reward Is Built</h1>
+    <p class="dek">Twelve real rollouts, launched concurrently, run to different lengths, and are only ever scored once, after each one ends. This page walks through one training step exactly as it happened on 2026&#8209;07&#8209;26, then zooms into a single trajectory to show every node that fed its one final number.</p>
+    <div class="readout" id="readout"></div>
+  </header>
+
+  <section id="sec-timeline">
+    <div class="section-head">
+      <h2>1&nbsp;&middot;&nbsp;Asynchronous, Variable&#8209;Length Rollouts</h2>
+      <p class="section-note">Step 25 of the completed run. All 12 rollouts (3 datasets &times; group size 4) are submitted to a thread pool at once and run as independent subprocesses &mdash; nothing here is scheduled sequentially.</p>
+    </div>
+    <div class="panel">
+      <div class="legend" id="legend-tools"></div>
+      <div class="timeline-scroll">
+        <div class="timeline" id="timeline"></div>
+      </div>
+      <div class="callout">
+        <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v8M7 9l-3-3M7 9l3-3M2 12h10" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>The highlighted lane, <code>fertility_diagnosis&nbsp;#002</code>, is the one expanded below. It reached <code>fail_admissibility</code> with a real reward of <b>0.493</b>, the richest outcome in this step to walk through node by node.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-composition">
+    <div class="section-head">
+      <h2>2&nbsp;&middot;&nbsp;Terminal Reward Composition</h2>
+      <p class="section-note">Nothing here is computed until the trajectory has already stopped. Every quantity below is measured once, at finalization, from the two real validation trees this one rollout produced.</p>
+    </div>
+    <div class="panel composition">
+      <div>
+        <div class="funnel" id="funnel"></div>
+        <p class="formula-note" id="formula-note"></p>
+        <div class="toggle-row">
+          <button class="toggle" id="broadcast-toggle">Show backward broadcast &uarr;</button>
+          <span class="toggle-note">Every query decision in the featured lane above receives this exact same R(&tau;), nothing else.</span>
+        </div>
+      </div>
+      <div>
+        <div class="tree-tabs" id="tree-tabs"></div>
+        <div class="tree-summary" id="tree-summary"></div>
+        <div class="tree-root" id="tree-root"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer id="footer"></footer>
+</div>
+
+<svg class="broadcast-layer" id="broadcast-svg"></svg>
+
+<script>
+// ============================================================
+// REAL DATA, pulled directly from query-policy-full-001's logs
+// ============================================================
+const LANES = [{"dataset": "fertility_diagnosis", "rollout_index": "000", "termination_reason": "abstained_implementation_failed", "reward": 0.0, "actions": [{"step": 1, "ts": "2026-07-26T18:55:08.839421+00:00", "tool": "clean_data"}, {"step": 2, "ts": "2026-07-26T19:00:28.191177+00:00", "tool": "retrieve_local"}, {"step": 3, "ts": "2026-07-26T19:01:38.268133+00:00", "tool": "summarize_method_specs"}, {"step": 4, "ts": "2026-07-26T19:01:38.418255+00:00", "tool": "discover_candidates"}, {"step": 5, "ts": "2026-07-26T19:01:38.435176+00:00", "tool": "select_candidate"}, {"step": 6, "ts": "2026-07-26T19:02:58.951030+00:00", "tool": "generate_analysis_code"}, {"step": 7, "ts": "2026-07-26T19:03:45.438466+00:00", "tool": "execute_analysis_code"}]}, {"dataset": "fertility_diagnosis", "rollout_index": "001", "termination_reason": "abstained_implementation_failed", "reward": 0.0, "actions": [{"step": 1, "ts": "2026-07-26T18:55:08.993013+00:00", "tool": "clean_data"}, {"step": 2, "ts": "2026-07-26T18:56:30.824441+00:00", "tool": "retrieve_local"}, {"step": 3, "ts": "2026-07-26T18:56:30.839522+00:00", "tool": "summarize_method_specs"}, {"step": 4, "ts": "2026-07-26T18:56:30.852247+00:00", "tool": "assess_method_guidance"}, {"step": 5, "ts": "2026-07-26T19:00:56.651368+00:00", "tool": "retrieve_more"}, {"step": 6, "ts": "2026-07-26T19:00:56.685291+00:00", "tool": "summarize_method_specs"}, {"step": 7, "ts": "2026-07-26T19:00:56.850418+00:00", "tool": "discover_candidates"}, {"step": 8, "ts": "2026-07-26T19:00:56.887012+00:00", "tool": "select_candidate"}, {"step": 9, "ts": "2026-07-26T19:04:38.413127+00:00", "tool": "generate_analysis_code"}, {"step": 10, "ts": "2026-07-26T19:05:29.783798+00:00", "tool": "execute_analysis_code"}]}, {"dataset": "fertility_diagnosis", "rollout_index": "002", "termination_reason": "abstained_statistical_validation_failed", "reward": 0.49336, "actions": [{"step": 1, "ts": "2026-07-26T18:55:08.887368+00:00", "tool": "clean_data"}, {"step": 2, "ts": "2026-07-26T18:56:21.762328+00:00", "tool": "retrieve_local"}, {"step": 3, "ts": "2026-07-26T18:56:21.775142+00:00", "tool": "summarize_method_specs"}, {"step": 4, "ts": "2026-07-26T18:56:21.916072+00:00", "tool": "discover_candidates"}, {"step": 5, "ts": "2026-07-26T18:56:21.932104+00:00", "tool": "select_candidate"}, {"step": 6, "ts": "2026-07-26T18:56:47.757156+00:00", "tool": "generate_analysis_code"}, {"step": 7, "ts": "2026-07-26T18:56:49.325709+00:00", "tool": "execute_analysis_code"}]}, {"dataset": "fertility_diagnosis", "rollout_index": "003", "termination_reason": "abstained_implementation_failed", "reward": 0.0, "actions": [{"step": 1, "ts": "2026-07-26T18:55:08.843490+00:00", "tool": "clean_data"}, {"step": 2, "ts": "2026-07-26T18:56:21.088413+00:00", "tool": "retrieve_local"}, {"step": 3, "ts": "2026-07-26T18:56:21.099501+00:00", "tool": "summarize_method_specs"}, {"step": 4, "ts": "2026-07-26T18:56:21.235751+00:00", "tool": "discover_candidates"}, {"step": 5, "ts": "2026-07-26T18:56:21.247815+00:00", "tool": "select_candidate"}, {"step": 6, "ts": "2026-07-26T18:59:24.250370+00:00", "tool": "generate_analysis_code"}, {"step": 7, "ts": "2026-07-26T19:01:55.845455+00:00", "tool": "execute_analysis_code"}]}, {"dataset": "haberman_survival", "rollout_index": "000", "termination_reason": "abstained_statistical_validation_failed", "reward": 0.245833, "actions": [{"step": 1, "ts": "2026-07-26T18:55:08.828069+00:00", "tool": "clean_data"}, {"step": 2, "ts": "2026-07-26T18:56:31.483845+00:00", "tool": "retrieve_local"}, {"step": 3, "ts": "2026-07-26T18:56:31.497072+00:00", "tool": "summarize_method_specs"}, {"step": 4, "ts": "2026-07-26T18:56:31.537545+00:00", "tool": "discover_candidates"}, {"step": 5, "ts": "2026-07-26T18:56:31.552150+00:00", "tool": "select_candidate"}, {"step": 6, "ts": "2026-07-26T18:56:49.101272+00:00", "tool": "generate_analysis_code"}, {"step": 7, "ts": "2026-07-26T18:57:28.893140+00:00", "tool": "execute_analysis_code"}]}, {"dataset": "haberman_survival", "rollout_index": "001", "termination_reason": "abstained_no_candidate", "reward": 0.0, "actions": [{"step": 1, "ts": "2026-07-26T18:55:08.876433+00:00", "tool": "clean_data"}, {"step": 2, "ts": "2026-07-26T18:56:22.957410+00:00", "tool": "retrieve_local"}, {"step": 3, "ts": "2026-07-26T18:56:22.971789+00:00", "tool": "summarize_method_specs"}, {"step": 4, "ts": "2026-07-26T18:56:22.985284+00:00", "tool": "assess_method_guidance"}, {"step": 5, "ts": "2026-07-26T19:03:00.761460+00:00", "tool": "retrieve_more"}, {"step": 6, "ts": "2026-07-26T19:03:40.109266+00:00", "tool": "summarize_method_specs"}, {"step": 7, "ts": "2026-07-26T19:03:40.139370+00:00", "tool": "assess_method_guidance"}, {"step": 8, "ts": "2026-07-26T19:05:08.374326+00:00", "tool": "retrieve_more"}, {"step": 9, "ts": "2026-07-26T19:05:08.430365+00:00", "tool": "summarize_method_specs"}]}, {"dataset": "haberman_survival", "rollout_index": "002", "termination_reason": "abstained_implementation_failed", "reward": 0.0, "actions": [{"step": 1, "ts": "2026-07-26T18:55:08.905432+00:00", "tool": "clean_data"}, {"step": 2, "ts": "2026-07-26T18:56:21.045455+00:00", "tool": "retrieve_local"}, {"step": 3, "ts": "2026-07-26T18:56:21.057710+00:00", "tool": "summarize_method_specs"}, {"step": 4, "ts": "2026-07-26T18:56:21.096897+00:00", "tool": "discover_candidates"}, {"step": 5, "ts": "2026-07-26T18:56:21.108783+00:00", "tool": "select_candidate"}, {"step": 6, "ts": "2026-07-26T18:57:24.707531+00:00", "tool": "generate_analysis_code"}, {"step": 7, "ts": "2026-07-26T18:58:01.390434+00:00", "tool": "execute_analysis_code"}]}, {"dataset": "haberman_survival", "rollout_index": "003", "termination_reason": "abstained_implementation_failed", "reward": 0.0, "actions": [{"step": 1, "ts": "2026-07-26T18:55:08.873693+00:00", "tool": "clean_data"}, {"step": 2, "ts": "2026-07-26T18:56:28.868827+00:00", "tool": "retrieve_local"}, {"step": 3, "ts": "2026-07-26T18:56:28.880971+00:00", "tool": "summarize_method_specs"}, {"step": 4, "ts": "2026-07-26T18:56:28.892420+00:00", "tool": "assess_method_guidance"}, {"step": 5, "ts": "2026-07-26T18:58:14.663006+00:00", "tool": "retrieve_more"}, {"step": 6, "ts": "2026-07-26T18:58:14.692890+00:00", "tool": "summarize_method_specs"}, {"step": 7, "ts": "2026-07-26T18:58:14.750066+00:00", "tool": "discover_candidates"}, {"step": 8, "ts": "2026-07-26T18:58:14.780885+00:00", "tool": "select_candidate"}, {"step": 9, "ts": "2026-07-26T18:58:52.922166+00:00", "tool": "generate_analysis_code"}, {"step": 10, "ts": "2026-07-26T18:58:54.643700+00:00", "tool": "execute_analysis_code"}]}, {"dataset": "heart_disease_cleveland", "rollout_index": "000", "termination_reason": "abstained_implementation_failed", "reward": 0.017237, "actions": [{"step": 1, "ts": "2026-07-26T18:55:08.839129+00:00", "tool": "clean_data"}, {"step": 2, "ts": "2026-07-26T18:56:23.927137+00:00", "tool": "retrieve_local"}, {"step": 3, "ts": "2026-07-26T18:56:23.939106+00:00", "tool": "summarize_method_specs"}, {"step": 4, "ts": "2026-07-26T18:56:24.244831+00:00", "tool": "discover_candidates"}, {"step": 5, "ts": "2026-07-26T18:56:24.259408+00:00", "tool": "select_candidate"}, {"step": 6, "ts": "2026-07-26T18:57:03.172737+00:00", "tool": "generate_analysis_code"}, {"step": 7, "ts": "2026-07-26T18:57:55.304762+00:00", "tool": "execute_analysis_code"}]}, {"dataset": "heart_disease_cleveland", "rollout_index": "001", "termination_reason": "abstained_statistical_validation_failed", "reward": 0.315203, "actions": [{"step": 1, "ts": "2026-07-26T18:55:08.973958+00:00", "tool": "clean_data"}, {"step": 2, "ts": "2026-07-26T18:56:29.670849+00:00", "tool": "retrieve_local"}, {"step": 3, "ts": "2026-07-26T18:56:29.684581+00:00", "tool": "summarize_method_specs"}, {"step": 4, "ts": "2026-07-26T18:56:29.696997+00:00", "tool": "assess_method_guidance"}, {"step": 5, "ts": "2026-07-26T18:57:25.040845+00:00", "tool": "retrieve_more"}, {"step": 6, "ts": "2026-07-26T18:57:25.067040+00:00", "tool": "summarize_method_specs"}, {"step": 7, "ts": "2026-07-26T18:57:25.385939+00:00", "tool": "discover_candidates"}, {"step": 8, "ts": "2026-07-26T18:57:25.415187+00:00", "tool": "select_candidate"}, {"step": 9, "ts": "2026-07-26T18:59:12.099788+00:00", "tool": "generate_analysis_code"}, {"step": 10, "ts": "2026-07-26T18:59:13.539156+00:00", "tool": "execute_analysis_code"}]}, {"dataset": "heart_disease_cleveland", "rollout_index": "002", "termination_reason": "abstained_implementation_failed", "reward": 0.031562, "actions": [{"step": 1, "ts": "2026-07-26T18:55:08.895427+00:00", "tool": "clean_data"}, {"step": 2, "ts": "2026-07-26T18:56:21.889040+00:00", "tool": "retrieve_local"}, {"step": 3, "ts": "2026-07-26T18:56:21.901831+00:00", "tool": "summarize_method_specs"}, {"step": 4, "ts": "2026-07-26T18:56:22.211703+00:00", "tool": "discover_candidates"}, {"step": 5, "ts": "2026-07-26T18:56:22.226373+00:00", "tool": "select_candidate"}, {"step": 6, "ts": "2026-07-26T18:57:59.015782+00:00", "tool": "generate_analysis_code"}, {"step": 7, "ts": "2026-07-26T19:00:00.928155+00:00", "tool": "execute_analysis_code"}]}, {"dataset": "heart_disease_cleveland", "rollout_index": "003", "termination_reason": "abstained_implementation_failed", "reward": 0.0, "actions": [{"step": 1, "ts": "2026-07-26T18:55:08.902161+00:00", "tool": "clean_data"}, {"step": 2, "ts": "2026-07-26T18:56:24.147726+00:00", "tool": "retrieve_local"}, {"step": 3, "ts": "2026-07-26T18:56:24.160567+00:00", "tool": "summarize_method_specs"}, {"step": 4, "ts": "2026-07-26T18:56:24.474738+00:00", "tool": "discover_candidates"}, {"step": 5, "ts": "2026-07-26T18:56:24.489835+00:00", "tool": "select_candidate"}, {"step": 6, "ts": "2026-07-26T18:56:43.737936+00:00", "tool": "generate_analysis_code"}, {"step": 7, "ts": "2026-07-26T18:57:13.558838+00:00", "tool": "execute_analysis_code"}]}];
+
+const TREES = {"statistical_validation_tree": {"name": "statistical_validation", "description": "Method-conditional validation tree for one structured statistical hypothesis.", "aggregation": "mean", "score": 0.875, "passed": false, "children": [{"name": "hypothesis", "description": "Structured hypothesis is present and testable.", "aggregation": "all", "score": 1.0, "passed": true, "children": [{"name": "schema_present", "description": "schema present", "score": 1.0, "passed": true, "children": [], "evidence": {"hypothesis_id": "h_7e5d117ee363"}}, {"name": "outcome_defined", "description": "outcome defined", "score": 1.0, "passed": true, "children": [], "evidence": {}}, {"name": "inputs_defined", "description": "inputs defined", "score": 1.0, "passed": true, "children": [], "evidence": {}}, {"name": "assertion_defined", "description": "assertion defined", "score": 1.0, "passed": true, "children": [], "evidence": {}}]}, {"name": "estimand", "description": "Hypothesis declares a target and a method-defined result can be evaluated.", "aggregation": "all", "score": 1.0, "passed": true, "children": [{"name": "target_defined", "description": "target defined", "score": 1.0, "passed": true, "children": [], "evidence": {}}, {"name": "relation_defined", "description": "relation defined", "score": 1.0, "passed": true, "children": [], "evidence": {}}, {"name": "method_bound", "description": "method bound", "score": 1.0, "passed": true, "children": [], "evidence": {}}]}, {"name": "data_applicability", "description": "Observed data support the variables and minimum sample properties required by the hypothesis.", "aggregation": "all", "score": 1.0, "passed": true, "children": [{"name": "outcome_type_known", "description": "outcome type known", "score": 1.0, "passed": true, "children": [], "evidence": {}}, {"name": "input_types_known", "description": "input types known", "score": 1.0, "passed": true, "children": [], "evidence": {}}, {"name": "minimum_sample_size", "description": "minimum sample size", "score": 1.0, "passed": true, "children": [], "evidence": {"n_observations": 100}}, {"name": "method_requirements_present", "description": "method requirements present", "score": 1.0, "passed": true, "children": [], "evidence": {}}]}, {"name": "multiplicity", "description": "Candidate-pool multiplicity is recorded and controlled when screening creates multiple hypotheses.", "aggregation": "all", "score": 1.0, "passed": true, "children": [{"name": "screening_scope_recorded", "description": "screening scope recorded", "score": 1.0, "passed": true, "children": [], "evidence": {"n_tests": 64}}, {"name": "q_value_recorded", "description": "q value recorded", "score": 1.0, "passed": true, "children": [], "evidence": {"selected_q_value": 0.0002588224}}, {"name": "q_value_within_threshold", "description": "q value within threshold", "score": 1.0, "passed": true, "children": [], "evidence": {"threshold": 0.1}}]}, {"name": "execution", "description": "Generated program executed and emitted a parseable result.", "aggregation": "all", "score": 1.0, "passed": true, "children": [{"name": "execution_success", "description": "execution success", "score": 1.0, "passed": true, "children": [], "evidence": {}}, {"name": "paper_program_evaluated", "description": "paper program evaluated", "score": 1.0, "passed": true, "children": [], "evidence": {}}]}, {"name": "paper_fidelity", "description": "Generated program implements enough of the extracted method specification to support statistical use.", "aggregation": "all", "score": 0.75, "passed": true, "children": [{"name": "rubric_survivor", "description": "rubric survivor", "score": 1.0, "passed": true, "children": [], "evidence": {"hard_gate_verdict": "survivor"}}, {"name": "paper_program_fidelity", "description": "paper program fidelity", "score": 0.75, "passed": true, "threshold": 0.0, "children": [], "evidence": {"paper_program_fidelity": 0.75, "fidelity_label": "faithful_reproduction", "diagnostic_only": true}}, {"name": "implementation_coverage", "description": "implementation coverage", "score": 1.0, "passed": true, "threshold": 0.8, "children": [], "evidence": {"implementation_coverage_score": 1.0, "implemented_components": ["c01", "c02", "c03", "c04", "c05", "c06", "c07", "c08"], "missing_components": [], "fatal_missing_components": [], "substitutions": []}}, {"name": "no_fatal_missing_components", "description": "no fatal missing components", "score": 1.0, "passed": true, "children": [], "evidence": {"fatal_missing_components": []}}, {"name": "no_generic_fallback", "description": "no generic fallback", "score": 1.0, "passed": true, "children": [], "evidence": {}}, {"name": "fidelity_usable", "description": "fidelity usable", "score": 1.0, "passed": true, "children": [], "evidence": {"minimum_component_coverage": 0.8}}]}, {"name": "assumption_admissibility", "description": "Method assumptions and output contract are explicitly checked by the execution output.", "aggregation": "all", "score": 0.0, "passed": false, "children": [{"name": "assumptions_checked", "description": "assumptions checked", "score": 0.666667, "passed": false, "threshold": 1.0, "children": [], "evidence": {"recall": 0.666667}}, {"name": "output_contract_satisfied", "description": "output contract satisfied", "score": 0.0, "passed": false, "threshold": 1.0, "children": [], "evidence": {"recall": 0.0}}]}, {"name": "robustness", "description": "Statistical robustness diagnostics pass method-conditional thresholds.", "aggregation": "mean", "score": 1.0, "passed": true, "children": [{"name": "internal_validation_present", "description": "internal validation present", "score": 1.0, "passed": true, "children": [], "evidence": {}}, {"name": "stability_present", "description": "stability present", "score": 1.0, "passed": true, "children": [], "evidence": {}}, {"name": "condition_number_acceptable", "description": "condition number acceptable", "score": 1.0, "passed": true, "children": [], "evidence": {"condition_number": null}}]}, {"name": "data_method_structural_fit", "description": "Extracted method acknowledges structural properties actually present in the data.", "aggregation": "mean", "score": 1.0, "passed": true, "children": [{"name": "no_structural_complications_detected", "description": "no structural complications detected", "score": 1.0, "passed": true, "children": [], "evidence": {}}]}, {"name": "internal_coherence", "description": "Mathematical specification and procedural steps describe the same method.", "aggregation": "mean", "score": 1.0, "passed": true, "children": [{"name": "math_spec_vocabulary_shared_with_steps", "description": "math spec vocabulary shared with steps", "score": 1.0, "passed": true, "children": [], "evidence": {"math_terms": ["based", "classification", "classifier", "combined", "components", "corruption", "cross-entropy", "embedding", "embeddings", "flow", "geodesic", "head", "kernels", "l_cross_entropy", "l_geodesic", "labeled", "lambda", "learning", "loss", "minimize", "mixing", "number", "output", "parameters", "rate", "ratio", "semi-supervised", "similarity", "tree-based", "unlabeled", "weights"], "shared_terms": ["based", "classification", "classifier", "combined", "corruption", "cross-entropy", "embedding", "embeddings", "flow", "geodesic", "labeled", "loss", "parameters", "similarity", "tree-based", "unlabeled"]}}]}], "terminal_gate": "fail_admissibility", "validation_label": "partial_validation", "validation_coverage_score": 0.875, "passed_checks": ["statistical_validation.hypothesis.schema_present", "statistical_validation.hypothesis.outcome_defined", "statistical_validation.hypothesis.inputs_defined", "statistical_validation.hypothesis.assertion_defined", "statistical_validation.estimand.target_defined", "statistical_validation.estimand.relation_defined", "statistical_validation.estimand.method_bound", "statistical_validation.data_applicability.outcome_type_known", "statistical_validation.data_applicability.input_types_known", "statistical_validation.data_applicability.minimum_sample_size", "statistical_validation.data_applicability.method_requirements_present", "statistical_validation.multiplicity.screening_scope_recorded", "statistical_validation.multiplicity.q_value_recorded", "statistical_validation.multiplicity.q_value_within_threshold", "statistical_validation.execution.execution_success", "statistical_validation.execution.paper_program_evaluated", "statistical_validation.paper_fidelity.rubric_survivor", "statistical_validation.paper_fidelity.paper_program_fidelity", "statistical_validation.paper_fidelity.implementation_coverage", "statistical_validation.paper_fidelity.no_fatal_missing_components", "statistical_validation.paper_fidelity.no_generic_fallback", "statistical_validation.paper_fidelity.fidelity_usable", "statistical_validation.robustness.internal_validation_present", "statistical_validation.robustness.stability_present", "statistical_validation.robustness.condition_number_acceptable", "statistical_validation.data_method_structural_fit.no_structural_complications_detected", "statistical_validation.internal_coherence.math_spec_vocabulary_shared_with_steps"], "failed_checks": ["statistical_validation.assumption_admissibility.assumptions_checked", "statistical_validation.assumption_admissibility.output_contract_satisfied"], "fatal_failed_checks": [], "emittable": false, "hypothesis_id": "h_7e5d117ee363", "method_spec_id": "gf_tab_semi_supervised_spec"}, "rubric_tree": {"name": "method_replication", "description": "Paper-derived method is implemented, executed, and validated.", "aggregation": "gated", "score": 0.215625, "passed": false, "children": [{"name": "execution", "description": "Program runs safely and emits parseable schema-conforming output.", "aggregation": "all", "score": 1.0, "passed": true, "children": [{"name": "static_validity", "description": "Program passes static validation.", "score": 1.0, "passed": true, "children": [], "evidence": {}}, {"name": "sandbox_execution", "description": "Program executes successfully in the sandbox.", "score": 1.0, "passed": true, "children": [], "evidence": {}}, {"name": "schema_validity", "description": "Program emits required JSON fields.", "score": 1.0, "passed": true, "children": [], "evidence": {}}]}, {"name": "paper_program_fidelity", "description": "Program implements the paper-derived method components with measured partial coverage.", "aggregation": "fidelity_components", "score": 0.8625, "passed": false, "children": [{"name": "source_depth", "description": "Method specification is extracted from full text or a method section rather than abstract-only evidence.", "score": 1.0, "passed": true, "children": [], "evidence": {"evidence_depth": "full_text"}}, {"name": "mathematical_specificity", "description": "Method specification contains enough mathematical structure to constrain implementation.", "score": 1.0, "passed": true, "children": [], "evidence": {"objective": "Minimize combined loss of Geodesic similarity loss (unlabeled) and Cross-entropy loss (labeled).", "loss": "L = L_geodesic + L_cross_entropy", "decision_rule": "Classification based on the output of the MLP head classifier.", "parameters": ["MLP weights", "Tree-based embedding parameters"], "tuning_parameters": ["lambda (corruption mixing ratio)", "Number of PCA components", "Learning rate"], "estimator": "Semi-supervised classifier using Geodesic Flow Kernels and Tree-based embeddings."}}, {"name": "implementation_exactness", "description": "Execution does not report proxy, surrogate, or approximation substitutions for missing paper details.", "score": 0.75, "passed": false, "children": [], "evidence": {"method_spec_warnings": ["Specific mathematical formulations for the Geodesic Flow Kernel similarity and tree-based embedding generation are not fully detailed in the provided text excerpt.", "Hyperparameter tuning strategies for lambda and PCA components are not explicitly defined in the excerpt."], "execution_warnings": ["Specific mathematical formulations for the Geodesic Flow Kernel similarity and tree-based embedding generation are not fully detailed in the provided text excerpt.", "Hyperparameter tuning strategies for lambda and PCA components are not explicitly defined in the excerpt."]}}, {"name": "implementation_components", "description": "Required method components are implemented or explicitly diagnosed as missing.", "score": 1.0, "passed": true, "children": [], "evidence": {"status": "ok", "coverage_score": 1.0, "n_components": 8, "implemented_components": ["c01", "c02", "c03", "c04", "c05", "c06", "c07", "c08"], "missing_components": [], "fatal_missing_components": [], "substitutions": [], "substitution_penalty": 0.0, "component_results": [{"id": "c01", "kind": "transformation", "description": "Variable-specific corruption: Hard corruption for continuous variables (permuted features emphasized) and Soft corruption for categorical variables (mixed with permuted features).", "required": true, "weight": 1.0, "fatal_if_missing": true, "score": 1.0, "implemented": true, "evidence": {"linked_step_ids": ["s02"]}}, {"id": "c02", "kind": "transformation", "description": "Feature representation generation using MLP heads for corrupted inputs.", "required": true, "weight": 1.0, "fatal_if_missing": true, "score": 1.0, "implemented": true, "evidence": {"linked_step_ids": ["s03"]}}, {"id": "c03", "kind": "transformation", "description": "PCA-based subspace basis computation for feature representations.", "required": true, "weight": 1.0, "fatal_if_missing": true, "score": 1.0, "implemented": true, "evidence": {"linked_step_ids": ["s04"]}}, {"id": "c04", "kind": "estimator", "description": "Geodesic Flow Kernel (GFK) similarity measure calculation between subspaces.", "required": true, "weight": 1.0, "fatal_if_missing": true, "score": 1.0, "implemented": true, "evidence": {"linked_step_ids": ["s05"]}}, {"id": "c05", "kind": "transformation", "description": "Tree-based embedding generation from labeled data to capture hierarchical relationships.", "required": true, "weight": 1.0, "fatal_if_missing": true, "score": 1.0, "implemented": true, "evidence": {"linked_step_ids": ["s06"]}}, {"id": "c06", "kind": "objective", "description": "Combined loss function: Geodesic similarity loss for unlabeled data and Cross-entropy loss for labeled data.", "required": true, "weight": 1.0, "fatal_if_missing": true, "score": 1.0, "implemented": true, "evidence": {"linked_step_ids": ["s07"]}}, {"id": "c07", "kind": "optimization", "description": "Parameter optimization via gradient descent on the combined loss.", "required": true, "weight": 1.0, "fatal_if_missing": true, "score": 1.0, "implemented": true, "evidence": {"linked_step_ids": ["s08"]}}, {"id": "c08", "kind": "output", "description": "Final classification predictions.", "required": true, "weight": 1.0, "fatal_if_missing": false, "score": 1.0, "implemented": true, "evidence": {"linked_step_ids": ["s09"]}}]}}, {"name": "implementation_invariants", "description": "Generated code satisfies paper-derived deterministic implementation invariants.", "score": 0.333333, "passed": false, "children": [], "evidence": {"status": "ok", "score": 0.333333, "n_invariants": 3, "results": [{"name": "distinct_corruption_methods", "rationale": "The method explicitly distinguishes between continuous and categorical variable corruption.", "score": 0.0, "passed": false, "required_patterns": [{"pattern": "hard_corruption", "matched": false, "error": null}, {"pattern": "soft_corruption", "matched": false, "error": null}], "forbidden_patterns": [{"pattern": "uniform_corruption", "matched": false, "error": null}]}, {"name": "geodesic_flow_kernel_usage", "rationale": "The similarity measure must be based on Geodesic Flow Kernels on the Grassmann manifold.", "score": 0.5, "passed": false, "required_patterns": [{"pattern": "geodesic_flow_kernel", "matched": false, "error": null}, {"pattern": "gfk", "matched": true, "error": null}], "forbidden_patterns": [{"pattern": "euclidean_distance", "matched": false, "error": null}]}, {"name": "tree_based_embedding", "rationale": "Tree-based embeddings must be used for labeled data.", "score": 0.5, "passed": false, "required_patterns": [{"pattern": "tree_embedding", "matched": true, "error": null}, {"pattern": "hierarchical", "matched": false, "error": null}], "forbidden_patterns": [{"pattern": "random_embedding", "matched": false, "error": null}]}]}}, {"name": "algorithm_steps", "description": "Ordered paper-derived algorithm steps are implemented.", "aggregation": "mean", "score": 1.0, "passed": true, "children": [{"name": "s01", "description": "Input tabular data containing mixed continuous and categorical variables.", "score": 1.0, "passed": true, "children": [], "evidence": {"required_output": "raw_data", "source_span": "Abstract; Introduction"}}, {"name": "s02", "description": "Apply variable-specific corruption methods: Hard corruption for continuous variables and Soft corruption for categorical variables to generate corrupted views.", "score": 1.0, "passed": true, "children": [], "evidence": {"required_output": "corrupted_views", "source_span": "Abstract; Methodology (Continuous Variable Corruption; Categorical Variable Corruption)"}}, {"name": "s03", "description": "Generate feature representations for the corrupted inputs using MLP heads.", "score": 1.0, "passed": true, "children": [], "evidence": {"required_output": "feature_representations", "source_span": "Figure 1; Abstract"}}, {"name": "s04", "description": "Compute subspace bases via PCA on the feature representations.", "score": 1.0, "passed": true, "children": [], "evidence": {"required_output": "subspace_bases", "source_span": "Figure 1; Abstract"}}, {"name": "s05", "description": "Calculate Geodesic Flow Kernel (GFK) based similarity measure between the subspaces of corrupted inputs to capture geometric changes.", "score": 1.0, "passed": true, "children": [], "evidence": {"required_output": "geodesic_similarity", "source_span": "Abstract; Figure 1"}}, {"name": "s06", "description": "Generate tree-based embeddings from labeled data to leverage hierarchical relationships.", "score": 1.0, "passed": true, "children": [], "evidence": {"required_output": "tree_embeddings", "source_span": "Abstract; Figure 1"}}, {"name": "s07", "description": "Compute Geodesic similarity loss for unlabeled data and Cross-entropy loss for labeled data.", "score": 1.0, "passed": true, "children": [], "evidence": {"required_output": "loss_values", "source_span": "Figure 1"}}, {"name": "s08", "description": "Optimize model parameters by minimizing the combined loss function.", "score": 1.0, "passed": true, "children": [], "evidence": {"required_output": "trained_model", "source_span": "Figure 1"}}, {"name": "s09", "description": "Predict labels for test data using the trained classifier.", "score": 1.0, "passed": true, "children": [], "evidence": {"required_output": "predictions", "source_span": "Figure 1"}}]}, {"name": "generic_fallback_absence", "description": "Implementation is not a familiar default substituted for the paper method.", "score": 1.0, "passed": true, "children": [], "evidence": {}}]}, {"name": "admissibility", "description": "Assumptions and output contract are checked.", "aggregation": "mean", "score": 0.333334, "passed": false, "children": [{"name": "assumptions", "description": "Paper assumptions are checked by the execution output.", "aggregation": "mean", "score": 0.666667, "passed": false, "children": [{"name": "mixed_variable_types", "description": "The dataset contains both continuous and categorical variables with distinct characteristics.", "score": 0.0, "passed": false, "children": [], "evidence": {"id": "a01"}}, {"name": "semi_supervised_setting", "description": "The learning setting is semi-supervised, involving both labeled and unlabeled data.", "score": 1.0, "passed": true, "children": [], "evidence": {"id": "a02"}}, {"name": "geometric_structure", "description": "Geometric changes between corrupted inputs on the Grassmann manifold are informative for learning.", "score": 1.0, "passed": true, "children": [], "evidence": {"id": "a03"}}]}, {"name": "output_contract", "description": "Required outputs are present.", "aggregation": "mean", "score": 0.0, "passed": false, "children": [{"name": "raw_data", "description": "Execution output satisfies contract key raw_data.", "score": 0.0, "passed": false, "children": [], "evidence": {}}, {"name": "corrupted_views", "description": "Execution output satisfies contract key corrupted_views.", "score": 0.0, "passed": false, "children": [], "evidence": {}}, {"name": "feature_representations", "description": "Execution output satisfies contract key feature_representations.", "score": 0.0, "passed": false, "children": [], "evidence": {}}, {"name": "subspace_bases", "description": "Execution output satisfies contract key subspace_bases.", "score": 0.0, "passed": false, "children": [], "evidence": {}}, {"name": "geodesic_similarity", "description": "Execution output satisfies contract key geodesic_similarity.", "score": 0.0, "passed": false, "children": [], "evidence": {}}, {"name": "tree_embeddings", "description": "Execution output satisfies contract key tree_embeddings.", "score": 0.0, "passed": false, "children": [], "evidence": {}}, {"name": "loss_values", "description": "Execution output satisfies contract key loss_values.", "score": 0.0, "passed": false, "children": [], "evidence": {}}, {"name": "trained_model", "description": "Execution output satisfies contract key trained_model.", "score": 0.0, "passed": false, "children": [], "evidence": {}}, {"name": "predictions", "description": "Execution output satisfies contract key predictions.", "score": 0.0, "passed": false, "children": [], "evidence": {}}]}]}], "hard_gate_verdict": "survivor", "missing_steps": []}};
+
+const REWARD = {
+  I: 0.215625, D: 0.62205, V: 0.875, A: 0.0, LAMBDA: 0.07, R: 0.49336,
+};
+
+const TOOL_META = {
+  clean_data:              { label: "clean data",        color: "var(--neutral)" },
+  retrieve_local:          { label: "retrieve",           color: "var(--accent)" },
+  retrieve_more:           { label: "retrieve (retry)",   color: "var(--accent)" },
+  summarize_method_specs:  { label: "extract method",     color: "#7B6FD9" },
+  assess_method_guidance:  { label: "assess guidance",    color: "#7B6FD9" },
+  discover_candidates:     { label: "discover candidate",  color: "var(--pass)" },
+  select_candidate:        { label: "select candidate",   color: "var(--pass)" },
+  generate_analysis_code:  { label: "generate code",      color: "var(--partial)" },
+  execute_analysis_code:   { label: "execute code",       color: "var(--partial)" },
+};
+
+const STATUS_META = {
+  abstained_implementation_failed:        { cls: "fail",    label: "impl. failed" },
+  abstained_statistical_validation_failed:{ cls: "partial", label: "fail_admissibility" },
+  abstained_no_candidate:                 { cls: "neutral", label: "no candidate" },
+  abstained_weak_statistics:              { cls: "partial", label: "weak statistics" },
+  abstained_tool_action_limit_exhausted:  { cls: "neutral", label: "budget exhausted" },
+};
+
+const FEATURED = { dataset: "fertility_diagnosis", rollout_index: "002" };
+
+// ---------- readout strip ----------
+function renderReadout() {
+  const stats = [
+    ["12", "rollouts, 1 thread-pool step"],
+    ["3 &times 4", "datasets &times group size"],
+    ["596", "rollouts, full run"],
+    ["0", "of 596 reached `emitted`"],
+    ["77", "real nodes in the featured tree"],
+  ];
+  document.getElementById("readout").innerHTML = stats.map(([n, l]) =>
+    `<div class="stat"><span class="n">${n}</span><span class="l">${l}</span></div>`
+  ).join("");
+}
+
+// ---------- timeline ----------
+function parseTs(s) { return new Date(s).getTime(); }
+
+function renderTimeline() {
+  const allTs = LANES.flatMap(l => l.actions.map(a => parseTs(a.ts)));
+  const t0 = Math.min(...allTs);
+  const tMax = Math.max(...allTs);
+  const spanSec = (tMax - t0) / 1000;
+  const pxPerSec = 620 / Math.max(spanSec, 1);
+  const labelWidth = 190;
+
+  // legend
+  const toolLegend = Object.values(TOOL_META).reduce((acc, m) => {
+    if (!acc.find(x => x.label === m.label)) acc.push(m);
+    return acc;
+  }, []);
+  document.getElementById("legend-tools").innerHTML = toolLegend.map(m =>
+    `<span class="item"><span class="swatch" style="background:${m.color}"></span>${m.label}</span>`
+  ).join("") + `<span class="item"><span class="swatch" style="background:var(--accent);border-radius:2px;transform:rotate(45deg)"></span>finalize (reward computed here)</span>`
+    + `<span class="item"><span class="swatch line" style="background:var(--fail)"></span>terminal status</span>`;
+
+  const clusters = {};
+  LANES.forEach(l => { (clusters[l.dataset] = clusters[l.dataset] || []).push(l); });
+
+  let html = `<div class="fork-line" style="left:${labelWidth}px"></div><div class="fork-label" style="left:${labelWidth}px">t&#8320; &middot; ThreadPoolExecutor forks all 12</div>`;
+
+  Object.entries(clusters).forEach(([dataset, lanes]) => {
+    html += `<div class="cluster"><div class="cluster-label" style="padding-left:${labelWidth}px">${dataset}</div>`;
+    lanes.forEach(lane => {
+      const isFeatured = dataset === FEATURED.dataset && lane.rollout_index === FEATURED.rollout_index;
+      const status = STATUS_META[lane.termination_reason] || { cls: "neutral", label: lane.termination_reason || "?" };
+      const lastAction = lane.actions[lane.actions.length - 1];
+      const lastOffset = (parseTs(lastAction.ts) - t0) / 1000;
+      const finalizeOffset = lastOffset + Math.max(spanSec * 0.018, 4);
+      const chipOffset = finalizeOffset + Math.max(spanSec * 0.018, 5);
+
+      let nodesHtml = "";
+      lane.actions.forEach((a, i) => {
+        const off = (parseTs(a.ts) - t0) / 1000;
+        const meta = TOOL_META[a.tool] || { label: a.tool, color: "var(--ink-faint)" };
+        nodesHtml += `<div class="node" data-tip="${meta.label} &middot; step ${a.step}" style="left:${labelWidth + off * pxPerSec}px;background:${meta.color}" data-lane="${dataset}-${lane.rollout_index}" data-idx="${i}"></div>`;
+      });
+      nodesHtml += `<div class="node finalize" data-tip="finalize: I,D,V,Λ measured" style="left:${labelWidth + finalizeOffset * pxPerSec}px" data-lane="${dataset}-${lane.rollout_index}" data-idx="final"></div>`;
+
+      const rewardTxt = (lane.reward ?? 0).toFixed(3);
+      const chip = `<div class="outcome-chip ${status.cls}" style="left:${labelWidth + chipOffset * pxPerSec}px"><span class="dot ${status.cls}"></span>${status.label} &middot; R=${rewardTxt}</div>`;
+
+      const connectorEnd = chipOffset * pxPerSec + 150;
+
+      html += `<div class="lane ${isFeatured ? "featured" : ""}" id="lane-${dataset}-${lane.rollout_index}">
+        <div class="lane-label" style="left:${labelWidth}px">${isFeatured ? "&#9656; " : ""}#${lane.rollout_index}${isFeatured ? " (featured)" : ""}</div>
+        <div class="lane-track">
+          <div class="lane-connector" style="left:${labelWidth}px;width:${connectorEnd}px"></div>
+          ${nodesHtml}
+          ${chip}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  // axis
+  const axisMax = Math.ceil((spanSec + 60) / 60);
+  let ticks = "";
+  for (let m = 0; m <= axisMax; m += 2) {
+    ticks += `<span class="tick" style="left:${labelWidth + m * 60 * pxPerSec}px">${m}m</span>`;
+  }
+  html += `<div class="axis">${ticks}</div>`;
+
+  document.getElementById("timeline").innerHTML = html;
+}
+
+// ---------- reward funnel ----------
+function renderFunnel() {
+  const terms = [
+    ["I(&tau;)", REWARD.I, "implementation score"],
+    ["D(&tau;)", REWARD.D, "data / diagnostic score"],
+    ["V(&tau;)", REWARD.V, "validation coverage"],
+    ["A(&tau;)", REWARD.A, "abstention bonus"],
+    ["&Lambda;(&tau;)", REWARD.LAMBDA, "action-cost penalty"],
+  ];
+  const termsHtml = terms.map(([sym, val, label]) =>
+    `<div class="term"><span class="sym">${sym}</span><span class="val">${val.toFixed(3)}</span><span class="label">${label}</span></div>`
+  ).join("");
+  document.getElementById("funnel").innerHTML = `
+    <div class="terms">${termsHtml}</div>
+    <span class="arrow-to-r">&rarr;</span>
+    <div class="r-badge">
+      <span class="sym">R(&tau;)</span>
+      <span class="val">${REWARD.R.toFixed(3)}</span>
+      <span class="sub">terminal reward</span>
+    </div>
+  `;
+  document.getElementById("formula-note").innerHTML =
+    `R(&tau;) = clip[0,1]( 0.30&middot;I + 0.45&middot;D + 0.25&middot;V + A &minus; &Lambda; ) &nbsp;&mdash;&nbsp; measured once, after <code>fertility_diagnosis&nbsp;#002</code> already stopped`;
+}
+
+// ---------- tree explorer ----------
+function countNodes(n) { return 1 + (n.children || []).reduce((s, c) => s + countNodes(c), 0); }
+function statusOf(n) {
+  if (n.score >= 0.999) return "pass";
+  if (n.score <= 0.001) return "fail";
+  return "partial";
+}
+function renderEvidence(ev) {
+  if (!ev || Object.keys(ev).length === 0) return "";
+  const parts = Object.entries(ev).map(([k, v]) => {
+    let vs = typeof v === "object" ? JSON.stringify(v) : String(v);
+    if (vs.length > 90) vs = vs.slice(0, 90) + "…";
+    return `${k}: ${vs}`;
+  });
+  return parts.join(" &middot; ");
+}
+function buildNode(n, depth) {
+  const hasChildren = n.children && n.children.length > 0;
+  const st = statusOf(n);
+  const wrap = document.createElement("div");
+  wrap.className = "tnode" + (hasChildren ? "" : " leaf");
+  const row = document.createElement("div");
+  row.className = "tnode-row";
+  row.innerHTML = `<span class="chev">&#9656;</span><span class="tname">${n.name}</span><span class="tdesc">${depth === 0 ? "" : (n.description || "")}</span><span class="tchip ${st}">${n.score.toFixed(2)}</span>`;
+  wrap.appendChild(row);
+
+  const ev = document.createElement("div");
+  ev.className = "tevidence";
+  ev.textContent = renderEvidence(n.evidence) || "no evidence payload";
+  wrap.appendChild(ev);
+
+  row.addEventListener("click", () => {
+    if (hasChildren) wrap.classList.toggle("open");
+    else wrap.classList.toggle("open"), wrap.classList.toggle("show-ev");
+  });
+
+  if (hasChildren) {
+    const kids = document.createElement("div");
+    kids.className = "tchildren";
+    n.children.forEach(c => kids.appendChild(buildNode(c, depth + 1)));
+    wrap.appendChild(kids);
+  }
+  return wrap;
+}
+
+let currentTreeKey = "statistical_validation_tree";
+function renderTreeTabs() {
+  const tabs = [
+    ["statistical_validation_tree", "V(&tau;) &middot; statistical validation tree (40 nodes)"],
+    ["rubric_tree", "I(&tau;) &middot; paper-program rubric tree (37 nodes)"],
+  ];
+  document.getElementById("tree-tabs").innerHTML = tabs.map(([k, l]) =>
+    `<button class="tree-tab ${k === currentTreeKey ? "active" : ""}" data-key="${k}">${l}</button>`
+  ).join("");
+  document.querySelectorAll(".tree-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentTreeKey = btn.dataset.key;
+      renderTreeTabs();
+      renderTree();
+    });
+  });
+}
+function renderTree() {
+  const data = TREES[currentTreeKey];
+  const total = countNodes(data);
+  const passN = (data.passed_checks || []).length;
+  const failN = (data.failed_checks || []).length;
+  document.getElementById("tree-summary").innerHTML = `
+    <span><b>${total}</b> nodes in this tree</span>
+    <span><b>${data.terminal_gate || data.hard_gate_verdict || "—"}</b> terminal gate</span>
+    ${passN || failN ? `<span><b>${passN}</b> passed / <b>${failN}</b> failed leaf checks</span>` : ""}
+  `;
+  const root = document.getElementById("tree-root");
+  root.innerHTML = "";
+  root.appendChild(buildNode(data, 0));
+  root.firstChild.classList.add("open");
+}
+
+// ---------- footer ----------
+function renderFooter() {
+  document.getElementById("footer").innerHTML = `
+    <p><b>Source.</b> All data on this page is real, pulled directly from <code>query-policy-full-001</code>'s logged rollouts for training step 25 (12 concurrent rollouts) and the full trajectory record for <code>fertility_diagnosis&nbsp;#002</code> (the featured lane). Nothing is illustrative.</p>
+    <p><b>What's deliberately not shown.</b> The current runtime scores each leaf check as pass or fail only; there is no third "not evaluated" state yet, so every chip above is genuinely binary except where a node's own score is a fractional recall (shown as partial). Across the full 596-rollout run, 0 rollouts reached "emitted" &mdash; this featured trajectory, at R(&tau;)=0.493, is one of the better-scoring outcomes despite still abstaining.</p>
+  `;
+}
+
+// ---------- backward broadcast ----------
+function renderBroadcast() {
+  const svg = document.getElementById("broadcast-svg");
+  const btn = document.getElementById("broadcast-toggle");
+  btn.addEventListener("click", () => {
+    document.body.classList.toggle("show-broadcast");
+    if (document.body.classList.contains("show-broadcast")) drawBroadcast();
+    else svg.innerHTML = "";
+  });
+  function drawBroadcast() {
+    const rBadge = document.querySelector(".r-badge");
+    const laneId = `lane-${FEATURED.dataset}-${FEATURED.rollout_index}`;
+    const lane = document.getElementById(laneId);
+    if (!rBadge || !lane) return;
+    const nodes = lane.querySelectorAll(".node");
+    const rRect = rBadge.getBoundingClientRect();
+    const rX = rRect.left + rRect.width / 2, rY = rRect.top + rRect.height / 2;
+    let paths = "";
+    nodes.forEach(n => {
+      if (n.dataset.idx === "final") return;
+      const nr = n.getBoundingClientRect();
+      const nx = nr.left + nr.width / 2, ny = nr.top + nr.height / 2;
+      const midY = (ny + rY) / 2;
+      paths += `<path d="M ${rX} ${rY} C ${rX} ${midY}, ${nx} ${midY}, ${nx} ${ny}" />`;
+    });
+    svg.innerHTML = paths;
+  }
+  window.addEventListener("resize", () => {
+    if (document.body.classList.contains("show-broadcast")) drawBroadcast();
+  });
+}
+
+renderReadout();
+renderTimeline();
+renderFunnel();
+renderTreeTabs();
+renderTree();
+renderFooter();
+renderBroadcast();
+</script>

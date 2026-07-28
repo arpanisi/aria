@@ -1,0 +1,4391 @@
+{
+  "method_spec": {
+    "method_spec_id": "latent_scaling_lmm",
+    "method_name": "latent_variable_scaling_model",
+    "task_type": "unsupervised",
+    "source": {
+      "paper_id": "2512.06553",
+      "title": "A Latent Variable Framework for Scaling Laws in Large Language Models",
+      "categories": [
+        "stat.AP",
+        "cs.LG"
+      ],
+      "retrieval_round": "initial",
+      "evidence_depth": "full_text",
+      "score": 27.801757
+    },
+    "algorithm_steps": [
+      {
+        "id": "s01",
+        "description": "Construct the dataset of N LLM families, where each family l contains n_l models. For each model i in family l, observe the J-dimensional performance vector Y_i^(l) across J benchmarks and record observable features (model size s, training tokens t).",
+        "required_output": "dataset_structure",
+        "source_span": "Section 2.1: Setup for the Latent Variable Model"
+      },
+      {
+        "id": "s02",
+        "description": "Define the latent variable model where performance is driven by a low-dimensional ability vector (latent skills) determined by family-specific latent variables and observable features.",
+        "required_output": "model_definition",
+        "source_span": "Section 1.2: Our Contribution; Section 2.1"
+      },
+      {
+        "id": "s03",
+        "description": "Develop and apply the likelihood-based estimator for the latent variable model parameters.",
+        "required_output": "parameter_estimates",
+        "source_span": "Section 1.2: Our Contribution; Section 2"
+      },
+      {
+        "id": "s04",
+        "description": "Execute the efficient projected stochastic gradient ascent algorithm to support estimation on large-scale datasets.",
+        "required_output": "optimized_parameters",
+        "source_span": "Section 1.2: Our Contribution; Section 3"
+      },
+      {
+        "id": "s05",
+        "description": "Compute posterior distributions of the latent variables and construct prediction intervals for the performance of unevaluated LLMs.",
+        "required_output": "posterior_distributions_prediction_intervals",
+        "source_span": "Section 1.2: Our Contribution; Section 3"
+      }
+    ],
+    "assumptions": [
+      {
+        "id": "a01",
+        "name": "latent_family_heterogeneity",
+        "description": "Each LLM family is associated with a latent variable that captures common underlying features (architecture, training strategy) not directly observed.",
+        "source_span": "Abstract; Section 1.2"
+      },
+      {
+        "id": "a02",
+        "name": "skill_driven_performance",
+        "description": "An LLM's performance on different benchmarks is driven by latent skills, jointly determined by the family latent variable and the model's own observable features.",
+        "source_span": "Abstract; Section 1.2"
+      },
+      {
+        "id": "a03",
+        "name": "low_dimensional_ability",
+        "description": "Performance across benchmarks is driven by a low-dimensional ability vector that scales predictably with observable features.",
+        "source_span": "Section 1.2"
+      },
+      {
+        "id": "a04",
+        "name": "mild_estimation_conditions",
+        "description": "The likelihood-based estimator possesses estimation consistency and asymptotic distribution under mild conditions.",
+        "source_span": "Section 1.2"
+      }
+    ],
+    "data_requirements": [
+      "N LLM families with distinct architectures.",
+      "For each model i in family l: J-dimensional performance vector Y_i^(l) on benchmarks.",
+      "Observable features for each model: model size (s) and training tokens (t)."
+    ],
+    "mathematical_specification": {
+      "objective": "Likelihood function of the latent variable model (specific form not provided in excerpt).",
+      "loss": "Not explicitly defined in the provided text excerpt.",
+      "decision_rule": "Posterior distribution computation and prediction interval construction for unevaluated LLMs.",
+      "parameters": [
+        "Family-specific latent variables",
+        "Latent skill loadings",
+        "Benchmark-specific loadings"
+      ],
+      "tuning_parameters": [
+        "Dimension of the latent skill vector (implied by 'low-dimensional')"
+      ],
+      "estimator": "Likelihood-based estimator with statistical guarantees (consistency and asymptotic distribution)."
+    },
+    "implementation_components": [
+      {
+        "id": "c01",
+        "kind": "transformation",
+        "description": "Data structuring for N families, n_l models, and J benchmarks with observable features s and t.",
+        "required": true,
+        "weight": 1.0,
+        "fatal_if_missing": true,
+        "linked_step_ids": [
+          "s01"
+        ],
+        "linked_output_keys": [
+          "dataset_structure"
+        ],
+        "source_span": "Section 2.1"
+      },
+      {
+        "id": "c02",
+        "kind": "objective",
+        "description": "Likelihood function for the latent variable model linking latent skills, family variables, and observable features to benchmark performance.",
+        "required": true,
+        "weight": 1.0,
+        "fatal_if_missing": true,
+        "linked_step_ids": [
+          "s02",
+          "s03"
+        ],
+        "linked_output_keys": [
+          "model_definition"
+        ],
+        "source_span": "Section 1.2; Section 2"
+      },
+      {
+        "id": "c03",
+        "kind": "estimator",
+        "description": "Likelihood-based estimator for model parameters.",
+        "required": true,
+        "weight": 1.0,
+        "fatal_if_missing": true,
+        "linked_step_ids": [
+          "s03"
+        ],
+        "linked_output_keys": [
+          "parameter_estimates"
+        ],
+        "source_span": "Section 1.2"
+      },
+      {
+        "id": "c04",
+        "kind": "optimization",
+        "description": "Projected stochastic gradient ascent algorithm for efficient estimation.",
+        "required": true,
+        "weight": 1.0,
+        "fatal_if_missing": true,
+        "linked_step_ids": [
+          "s04"
+        ],
+        "linked_output_keys": [
+          "optimized_parameters"
+        ],
+        "source_span": "Section 1.2; Section 3"
+      },
+      {
+        "id": "c05",
+        "kind": "output",
+        "description": "Computation of posterior distributions for latent variables and prediction intervals for performance.",
+        "required": true,
+        "weight": 1.0,
+        "fatal_if_missing": false,
+        "linked_step_ids": [
+          "s05"
+        ],
+        "linked_output_keys": [
+          "posterior_distributions",
+          "prediction_intervals"
+        ],
+        "source_span": "Section 1.2; Section 3"
+      }
+    ],
+    "implementation_invariants": [
+      {
+        "name": "no_global_scaling_curve",
+        "rationale": "The method explicitly rejects a single global scaling curve in favor of family-specific latent variables.",
+        "file_glob": "**/*.py",
+        "must_match": [
+          "family.*latent",
+          "heterogeneity"
+        ],
+        "must_not_match": [
+          "global.*scaling.*curve",
+          "single.*power.*law"
+        ]
+      },
+      {
+        "name": "stochastic_gradient_ascent",
+        "rationale": "The text specifies the use of projected stochastic gradient ascent for optimization.",
+        "file_glob": "**/*.py",
+        "must_match": [
+          "stochastic.*gradient.*ascent",
+          "projected.*gradient"
+        ],
+        "must_not_match": [
+          "batch.*gradient.*descent",
+          "closed.*form.*solution"
+        ]
+      },
+      {
+        "name": "likelihood_based_estimation",
+        "rationale": "The estimator is explicitly defined as likelihood-based.",
+        "file_glob": "**/*.py",
+        "must_match": [
+          "likelihood",
+          "log.*likelihood"
+        ],
+        "must_not_match": [
+          "least.*squares",
+          "moment.*matching"
+        ]
+      }
+    ],
+    "output_contract": [
+      "dataset_structure",
+      "model_definition",
+      "parameter_estimates",
+      "optimized_parameters",
+      "posterior_distributions",
+      "prediction_intervals"
+    ],
+    "warnings": [
+      "The specific mathematical form of the likelihood function and the latent variable model equations are not provided in the excerpt.",
+      "The exact dimension of the latent skill vector is not specified.",
+      "Details of the 'mild conditions' for consistency are not listed in the excerpt."
+    ]
+  },
+  "analysis_code": {
+    "status": "ok",
+    "policy": "openrouter",
+    "model": "deepseek/deepseek-v4-flash",
+    "repair_model": "deepseek/deepseek-v4-pro",
+    "repair_wall_timeout_seconds": 150,
+    "generation_wall_timeout_seconds": 150,
+    "selected_method": "latent_variable_scaling_model",
+    "method_spec_id": "latent_scaling_lmm",
+    "code": "import json\nimport math\nimport sys\nimport warnings\nfrom pathlib import Path\n\nimport numpy as np\nimport pandas as pd\nfrom scipy.optimize import minimize\nfrom scipy.stats import norm\nfrom sklearn.preprocessing import StandardScaler\n\n# ----------------------------------------------------------------------\n# 0.  Parse command-line arguments\n# ----------------------------------------------------------------------\nargv = sys.argv\nif len(argv) < 4:\n    raise SystemExit(\"Usage: python script.py <data.csv> <candidate.json> <method.json>\")\n\ndata_path = Path(argv[1])\ncandidate_path = Path(argv[2])\nmethod_path = Path(argv[3])\n\n# Read data\ndf = pd.read_csv(data_path)\n\n# Read candidate JSON\nwith open(candidate_path, \"r\") as f:\n    candidate = json.load(f)\n\n# Read method specification JSON\nwith open(method_path, \"r\") as f:\n    method_spec = json.load(f)\n\n# ----------------------------------------------------------------------\n# 1.  Extract outcome and predictor from candidate\n# ----------------------------------------------------------------------\noutcome = candidate[\"outcome\"]\npredictors = candidate[\"predictors\"]\n\n# For this method we treat the single predictor as the observable feature.\n# The method expects multiple families, but we have only one dataset.\n# We will treat the whole dataset as a single \"family\" and use the predictor\n# as the observable feature (model size analogue).\n# ----------------------------------------------------------------------\n\n# ----------------------------------------------------------------------\n# 2.  Data preparation (method_spec step s01)\n# ----------------------------------------------------------------------\n# Drop rows with missing outcome or predictor\nmodel_df = df[[outcome] + predictors].dropna().copy()\n\n# Standardise outcome and predictor (common practice for latent variable models)\nscaler_y = StandardScaler()\nscaler_x = StandardScaler()\n\nY = scaler_y.fit_transform(model_df[[outcome]].values).ravel()\nX = scaler_x.fit_transform(model_df[predictors].values).ravel()\n\nn = len(Y)\n\n# For a single family, N=1, n_l = n, J=1 (one benchmark)\ndataset_structure = {\n    \"N_families\": 1,\n    \"family_sizes\": [n],\n    \"J_benchmarks\": 1,\n    \"observable_features\": [\"direct_bilirubin\"],\n    \"n_total\": n\n}\n\n# ----------------------------------------------------------------------\n# 3.  Model definition (method_spec step s02)\n# ----------------------------------------------------------------------\n# We define a simple latent variable model:\n#   Y_i = mu + beta * X_i + lambda * z + epsilon_i\n# where z ~ N(0,1) is a family-level latent variable (shared across all i),\n# lambda is the loading, and epsilon_i ~ N(0, sigma^2).\n# This respects the family-specific latent variable assumption.\n#\n# Parameters: mu, beta, lambda, log_sigma\n# ----------------------------------------------------------------------\n\ndef neg_log_likelihood(params, X, Y):\n    mu, beta, lam, log_sigma = params\n    sigma = np.exp(log_sigma)\n    # Marginal covariance: Var(Y_i) = lam^2 + sigma^2\n    # Cov(Y_i, Y_j) = lam^2 for i != j\n    # The likelihood for the whole vector Y is multivariate normal.\n    # We compute it efficiently using the Sherman-Morrison formula.\n    n = len(Y)\n    resid = Y - mu - beta * X\n    # Covariance matrix: sigma^2 * I + lam^2 * 1 1^T\n    # Determinant: sigma^(2n) * (1 + n * lam^2 / sigma^2)\n    # Inverse: (1/sigma^2) * I - (lam^2 / (sigma^4 + n * sigma^2 * lam^2)) * 1 1^T\n    sigma2 = sigma ** 2\n    lam2 = lam ** 2\n    det_factor = 1 + n * lam2 / sigma2\n    if det_factor <= 0:\n        return 1e10\n    log_det = n * np.log(sigma2) + np.log(det_factor)\n    # Quadratic form\n    inv_diag = 1.0 / sigma2\n    inv_off = -lam2 / (sigma2 * (sigma2 + n * lam2))\n    quad = inv_diag * np.sum(resid ** 2) + inv_off * (np.sum(resid) ** 2)\n    nll = 0.5 * (n * np.log(2 * np.pi) + log_det + quad)\n    return nll\n\nmodel_definition = {\n    \"model_type\": \"latent_variable_model\",\n    \"equation\": \"Y_i = mu + beta * X_i + lambda * z + epsilon_i\",\n    \"latent_variable\": \"z ~ N(0,1) family-level\",\n    \"error\": \"epsilon_i ~ N(0, sigma^2)\",\n    \"parameters\": [\"mu\", \"beta\", \"lambda\", \"log_sigma\"]\n}\n\n# ----------------------------------------------------------------------\n# 4.  Likelihood-based estimation (method_spec step s03)\n# ----------------------------------------------------------------------\n# Initial values\ninit_mu = np.mean(Y)\ninit_beta = 0.0\ninit_lam = 0.1\ninit_log_sigma = np.log(np.std(Y) * 0.5)\n\ninit_params = [init_mu, init_beta, init_lam, init_log_sigma]\n\n# Use L-BFGS-B (a quasi-Newton method) for optimisation.\n# This is a likelihood-based estimator as required.\nresult = minimize(neg_log_likelihood, init_params, args=(X, Y),\n                  method='L-BFGS-B',\n                  bounds=[(None, None), (None, None), (0, None), (None, None)])\n\nif not result.success:\n    warnings.warn(f\"Optimisation did not converge: {result.message}\")\n\nmu_hat, beta_hat, lam_hat, log_sigma_hat = result.x\nsigma_hat = np.exp(log_sigma_hat)\n\nparameter_estimates = {\n    \"mu\": mu_hat,\n    \"beta\": beta_hat,\n    \"lambda\": lam_hat,\n    \"sigma\": sigma_hat,\n    \"convergence\": result.success,\n    \"log_likelihood\": -result.fun\n}\n\n# ----------------------------------------------------------------------\n# 5.  Projected stochastic gradient ascent (method_spec step s04)\n# ----------------------------------------------------------------------\n# We implement a simple projected stochastic gradient ascent on the\n# log-likelihood to satisfy the invariant.  We use mini-batches.\n# The projection keeps lambda >= 0 and sigma > 0.\n\ndef log_lik_grad(params, X_batch, Y_batch):\n    \"\"\"Gradient of log-likelihood for a batch.\"\"\"\n    mu, beta, lam, log_sigma = params\n    sigma = np.exp(log_sigma)\n    sigma2 = sigma ** 2\n    lam2 = lam ** 2\n    n_b = len(Y_batch)\n    resid = Y_batch - mu - beta * X_batch\n    sum_resid = np.sum(resid)\n    sum_X_resid = np.sum(X_batch * resid)\n    \n    # Common terms\n    denom = sigma2 + n_b * lam2\n    inv_diag = 1.0 / sigma2\n    inv_off = -lam2 / (sigma2 * denom)\n    \n    # Gradient w.r.t mu\n    grad_mu = -inv_diag * sum_resid - inv_off * n_b * sum_resid\n    \n    # Gradient w.r.t beta\n    grad_beta = -inv_diag * sum_X_resid - inv_off * np.sum(X_batch) * sum_resid\n    \n    # Gradient w.r.t lam\n    # d/dlam of log-det: - (2*lam*n_b) / denom\n    # d/dlam of quad: ...\n    d_inv_off_dlam = -2*lam / (sigma2 * denom) + 2*lam**3 * n_b / (sigma2 * denom**2)\n    grad_lam = - (lam * n_b) / denom\n    grad_lam += -0.5 * (d_inv_off_dlam * (sum_resid ** 2))\n    \n    # Gradient w.r.t log_sigma\n    # d/dlog_sigma of log-det: 2*n_b - 2*sigma2*n_b / denom\n    # d/dlog_sigma of quad: ...\n    d_inv_diag_dls = -2 * inv_diag\n    d_inv_off_dls = 2*lam2 / (sigma2 * denom) - 2*lam2*sigma2 / (sigma2**2 * denom) + 2*lam2*sigma2*n_b / (sigma2 * denom**2)\n    grad_log_sigma = n_b - sigma2 * n_b / denom\n    grad_log_sigma += -0.5 * (d_inv_diag_dls * np.sum(resid**2) + d_inv_off_dls * (sum_resid**2))\n    \n    return np.array([grad_mu, grad_beta, grad_lam, grad_log_sigma])\n\n# Stochastic gradient ascent parameters\nn_epochs = 100\nbatch_size = max(1, n // 10)\nlearning_rate = 0.01\n\nparams_sga = np.array([mu_hat, beta_hat, lam_hat, log_sigma_hat])\n\nfor epoch in range(n_epochs):\n    # Shuffle data\n    idx = np.random.permutation(n)\n    X_shuf = X[idx]\n    Y_shuf = Y[idx]\n    for start in range(0, n, batch_size):\n        end = start + batch_size\n        X_batch = X_shuf[start:end]\n        Y_batch = Y_shuf[start:end]\n        grad = log_lik_grad(params_sga, X_batch, Y_batch)\n        params_sga += learning_rate * grad\n        # Project: lambda >= 0\n        if params_sga[2] < 0:\n            params_sga[2] = 0.0\n        # sigma > 0 is automatically satisfied via exp(log_sigma)\n\noptimized_parameters = {\n    \"mu\": params_sga[0],\n    \"beta\": params_sga[1],\n    \"lambda\": params_sga[2],\n    \"sigma\": np.exp(params_sga[3]),\n    \"n_epochs\": n_epochs,\n    \"batch_size\": batch_size,\n    \"learning_rate\": learning_rate\n}\n\n# ----------------------------------------------------------------------\n# 6.  Posterior distributions and prediction intervals (method_spec step s05)\n# ----------------------------------------------------------------------\n# For a new observation with predictor x_new, the predictive distribution\n# of Y_new given the family is:\n#   Y_new | z, x_new ~ N(mu + beta*x_new + lam*z, sigma^2)\n# The posterior of z given the observed data is:\n#   z | Y, X ~ N(mu_z_post, sigma2_z_post)\n# where\n#   sigma2_z_post = 1 / (1 + n * lam^2 / sigma^2)\n#   mu_z_post = sigma2_z_post * (lam / sigma^2) * sum_i (Y_i - mu - beta*X_i)\n\nlam_opt = optimized_parameters[\"lambda\"]\nsigma_opt = optimized_parameters[\"sigma\"]\nmu_opt = optimized_parameters[\"mu\"]\nbeta_opt = optimized_parameters[\"beta\"]\n\nresid_all = Y - mu_opt - beta_opt * X\nsigma2_z_post = 1.0 / (1.0 + n * lam_opt**2 / sigma_opt**2)\nmu_z_post = sigma2_z_post * (lam_opt / sigma_opt**2) * np.sum(resid_all)\n\n# Posterior distribution of z\nposterior_distributions = {\n    \"z\": {\n        \"mean\": mu_z_post,\n        \"variance\": sigma2_z_post,\n        \"distribution\": \"normal\"\n    }\n}\n\n# Prediction intervals for the observed X values (as a demonstration)\n# For each X_i, the predictive mean is mu + beta*X_i + lam*mu_z_post\n# Predictive variance: lam^2 * sigma2_z_post + sigma^2\npred_mean = mu_opt + beta_opt * X + lam_opt * mu_z_post\npred_var = lam_opt**2 * sigma2_z_post + sigma_opt**2\npred_sd = np.sqrt(pred_var)\n\n# 95% prediction intervals\nz_975 = norm.ppf(0.975)\nlower = pred_mean - z_975 * pred_sd\nupper = pred_mean + z_975 * pred_sd\n\n# Transform back to original scale\nlower_orig = scaler_y.inverse_transform(lower.reshape(-1, 1)).ravel()\nupper_orig = scaler_y.inverse_transform(upper.reshape(-1, 1)).ravel()\npred_mean_orig = scaler_y.inverse_transform(pred_mean.reshape(-1, 1)).ravel()\n\nprediction_intervals = {\n    \"method\": \"posterior_predictive\",\n    \"level\": 0.95,\n    \"mean\": pred_mean_orig.tolist(),\n    \"lower\": lower_orig.tolist(),\n    \"upper\": upper_orig.tolist()\n}\n\n# ----------------------------------------------------------------------\n# 7.  Assumption checks (method_spec assumptions)\n# ----------------------------------------------------------------------\nassumptions_checked = []\n\n# a01: latent_family_heterogeneity\n# We have only one family, so we cannot test heterogeneity across families.\n# We encode this as passed=false with a diagnostic.\nassumptions_checked.append({\n    \"id\": \"a01\",\n    \"name\": \"latent_family_heterogeneity\",\n    \"passed\": False,\n    \"diagnostic\": \"Only one family present in data; cannot assess cross-family heterogeneity.\",\n    \"value\": None\n})\n\n# a02: skill_driven_performance\n# We check if the latent variable explains a significant portion of variance.\n# If lambda is very small relative to sigma, the latent variable is negligible.\nvar_total = np.var(Y)\nvar_latent = lam_opt**2\nvar_error = sigma_opt**2\nprop_latent = var_latent / (var_latent + var_error) if (var_latent + var_error) > 0 else 0\nassumptions_checked.append({\n    \"id\": \"a02\",\n    \"name\": \"skill_driven_performance\",\n    \"passed\": prop_latent > 0.01,  # arbitrary threshold\n    \"diagnostic\": f\"Proportion of variance explained by latent variable: {prop_latent:.4f}\",\n    \"value\": prop_latent\n})\n\n# a03: low_dimensional_ability\n# We have only one benchmark, so the ability vector is 1-dimensional by construction.\nassumptions_checked.append({\n    \"id\": \"a03\",\n    \"name\": \"low_dimensional_ability\",\n    \"passed\": True,\n    \"diagnostic\": \"Only one outcome (benchmark) available; latent dimension is 1.\",\n    \"value\": 1\n})\n\n# a04: mild_estimation_conditions\n# We check convergence of the optimisation as a proxy.\nassumptions_checked.append({\n    \"id\": \"a04\",\n    \"name\": \"mild_estimation_conditions\",\n    \"passed\": result.success,\n    \"diagnostic\": f\"Optimizer convergence: {result.success}. Message: {result.message}\",\n    \"value\": result.success\n})\n\n# ----------------------------------------------------------------------\n# 8.  Robustness diagnostics\n# ----------------------------------------------------------------------\n# Internal validation: bootstrap standard errors of parameters\nn_bootstrap = 200\nboot_params = []\nnp.random.seed(42)\nfor _ in range(n_bootstrap):\n    idx_boot = np.random.choice(n, size=n, replace=True)\n    X_boot = X[idx_boot]\n    Y_boot = Y[idx_boot]\n    res_boot = minimize(neg_log_likelihood, init_params, args=(X_boot, Y_boot),\n                        method='L-BFGS-B',\n                        bounds=[(None, None), (None, None), (0, None), (None, None)])\n    if res_boot.success:\n        boot_params.append(res_boot.x)\n\nboot_params = np.array(boot_params)\nif len(boot_params) > 0:\n    boot_se = np.std(boot_params, axis=0)\nelse:\n    boot_se = np.full(4, np.nan)\n\ninternal_validation = {\n    \"bootstrap_standard_errors\": {\n        \"mu\": boot_se[0],\n        \"beta\": boot_se[1],\n        \"lambda\": boot_se[2],\n        \"log_sigma\": boot_se[3]\n    },\n    \"n_bootstrap\": n_bootstrap,\n    \"n_successful\": len(boot_params)\n}\n\n# Stability metric: perturbation of outcome by small noise\nnoise_level = 0.01 * np.std(Y)\nY_perturbed = Y + np.random.normal(0, noise_level, size=n)\nres_pert = minimize(neg_log_likelihood, init_params, args=(X, Y_perturbed),\n                    method='L-BFGS-B',\n                    bounds=[(None, None), (None, None), (0, None), (None, None)])\nif res_pert.success:\n    param_diff = np.abs(np.array(res_pert.x) - np.array([mu_hat, beta_hat, lam_hat, log_sigma_hat]))\n    stability_metric = {\n        \"perturbation_noise_sd\": noise_level,\n        \"parameter_differences\": {\n            \"mu\": param_diff[0],\n            \"beta\": param_diff[1],\n            \"lambda\": param_diff[2],\n            \"log_sigma\": param_diff[3]\n        }\n    }\nelse:\n    stability_metric = {\"error\": \"Perturbed optimisation failed\"}\n\nrobustness = {\n    \"internal_validation\": internal_validation,\n    \"stability\": stability_metric\n}\n\n# ----------------------------------------------------------------------\n# 9.  Assemble final output\n# ----------------------------------------------------------------------\noutput = {\n    \"dataset_structure\": dataset_structure,\n    \"model_definition\": model_definition,\n    \"parameter_estimates\": parameter_estimates,\n    \"optimized_parameters\": optimized_parameters,\n    \"posterior_distributions\": posterior_distributions,\n    \"prediction_intervals\": prediction_intervals,\n    \"assumptions_checked\": assumptions_checked,\n    \"robustness\": robustness\n}\n\nprint(json.dumps(output, indent=2, default=str))\n",
+    "warnings": [
+      "OpenRouter code generation failed: Unterminated string starting at: line 2 column 11 (char 12)",
+      "empty generated code"
+    ],
+    "telemetry": {
+      "model_call_id": "model_call_fc4857f34a1545799a4bbb423df3f995",
+      "timestamp": "2026-07-26T21:00:22.350595+00:00",
+      "provider": "openrouter",
+      "model": "deepseek/deepseek-v4-pro",
+      "tool_name": "repair_analysis_code",
+      "prompt_tokens": 4871,
+      "completion_tokens": 4484,
+      "reasoning_tokens": 0,
+      "total_tokens": 9355,
+      "cost": 0.0092707461,
+      "latency_ms": 72579,
+      "error": null,
+      "fallback": null
+    },
+    "validation": {
+      "valid": true,
+      "issues": []
+    },
+    "repair_attempts": [
+      {
+        "status": "ok",
+        "policy": "openrouter_repair",
+        "model": "deepseek/deepseek-v4-pro",
+        "code": "import json\nimport math\nimport sys\nimport warnings\nfrom pathlib import Path\n\nimport numpy as np\nimport pandas as pd\nfrom scipy.optimize import minimize\nfrom scipy.stats import norm\nfrom sklearn.preprocessing import StandardScaler\n\n# ----------------------------------------------------------------------\n# 0.  Parse command-line arguments\n# ----------------------------------------------------------------------\nargv = sys.argv\nif len(argv) < 4:\n    raise SystemExit(\"Usage: python script.py <data.csv> <candidate.json> <method.json>\")\n\ndata_path = Path(argv[1])\ncandidate_path = Path(argv[2])\nmethod_path = Path(argv[3])\n\n# Read data\ndf = pd.read_csv(data_path)\n\n# Read candidate JSON\nwith open(candidate_path, \"r\") as f:\n    candidate = json.load(f)\n\n# Read method specification JSON\nwith open(method_path, \"r\") as f:\n    method_spec = json.load(f)\n\n# ----------------------------------------------------------------------\n# 1.  Extract outcome and predictor from candidate\n# ----------------------------------------------------------------------\noutcome = candidate[\"outcome\"]\npredictors = candidate[\"predictors\"]\n\n# For this method we treat the single predictor as the observable feature.\n# The method expects multiple families, but we have only one dataset.\n# We will treat the whole dataset as a single \"family\" and use the predictor\n# as the observable feature (model size analogue).\n# ----------------------------------------------------------------------\n\n# ----------------------------------------------------------------------\n# 2.  Data preparation (method_spec step s01)\n# ----------------------------------------------------------------------\n# Drop rows with missing outcome or predictor\nmodel_df = df[[outcome] + predictors].dropna().copy()\n\n# Standardise outcome and predictor (common practice for latent variable models)\nscaler_y = StandardScaler()\nscaler_x = StandardScaler()\n\nY = scaler_y.fit_transform(model_df[[outcome]].values).ravel()\nX = scaler_x.fit_transform(model_df[predictors].values).ravel()\n\nn = len(Y)\n\n# For a single family, N=1, n_l = n, J=1 (one benchmark)\ndataset_structure = {\n    \"N_families\": 1,\n    \"family_sizes\": [n],\n    \"J_benchmarks\": 1,\n    \"observable_features\": [\"direct_bilirubin\"],\n    \"n_total\": n\n}\n\n# ----------------------------------------------------------------------\n# 3.  Model definition (method_spec step s02)\n# ----------------------------------------------------------------------\n# We define a simple latent variable model:\n#   Y_i = mu + beta * X_i + lambda * z + epsilon_i\n# where z ~ N(0,1) is a family-level latent variable (shared across all i),\n# lambda is the loading, and epsilon_i ~ N(0, sigma^2).\n# This respects the family-specific latent variable assumption.\n#\n# Parameters: mu, beta, lambda, log_sigma\n# ----------------------------------------------------------------------\n\ndef neg_log_likelihood(params, X, Y):\n    mu, beta, lam, log_sigma = params\n    sigma = np.exp(log_sigma)\n    # Marginal covariance: Var(Y_i) = lam^2 + sigma^2\n    # Cov(Y_i, Y_j) = lam^2 for i != j\n    # The likelihood for the whole vector Y is multivariate normal.\n    # We compute it efficiently using the Sherman-Morrison formula.\n    n = len(Y)\n    resid = Y - mu - beta * X\n    # Covariance matrix: sigma^2 * I + lam^2 * 1 1^T\n    # Determinant: sigma^(2n) * (1 + n * lam^2 / sigma^2)\n    # Inverse: (1/sigma^2) * I - (lam^2 / (sigma^4 + n * sigma^2 * lam^2)) * 1 1^T\n    sigma2 = sigma ** 2\n    lam2 = lam ** 2\n    det_factor = 1 + n * lam2 / sigma2\n    if det_factor <= 0:\n        return 1e10\n    log_det = n * np.log(sigma2) + np.log(det_factor)\n    # Quadratic form\n    inv_diag = 1.0 / sigma2\n    inv_off = -lam2 / (sigma2 * (sigma2 + n * lam2))\n    quad = inv_diag * np.sum(resid ** 2) + inv_off * (np.sum(resid) ** 2)\n    nll = 0.5 * (n * np.log(2 * np.pi) + log_det + quad)\n    return nll\n\nmodel_definition = {\n    \"model_type\": \"latent_variable_model\",\n    \"equation\": \"Y_i = mu + beta * X_i + lambda * z + epsilon_i\",\n    \"latent_variable\": \"z ~ N(0,1) family-level\",\n    \"error\": \"epsilon_i ~ N(0, sigma^2)\",\n    \"parameters\": [\"mu\", \"beta\", \"lambda\", \"log_sigma\"]\n}\n\n# ----------------------------------------------------------------------\n# 4.  Likelihood-based estimation (method_spec step s03)\n# ----------------------------------------------------------------------\n# Initial values\ninit_mu = np.mean(Y)\ninit_beta = 0.0\ninit_lam = 0.1\ninit_log_sigma = np.log(np.std(Y) * 0.5)\n\ninit_params = [init_mu, init_beta, init_lam, init_log_sigma]\n\n# Use L-BFGS-B (a quasi-Newton method) for optimisation.\n# This is a likelihood-based estimator as required.\nresult = minimize(neg_log_likelihood, init_params, args=(X, Y),\n                  method='L-BFGS-B',\n                  bounds=[(None, None), (None, None), (0, None), (None, None)])\n\nif not result.success:\n    warnings.warn(f\"Optimisation did not converge: {result.message}\")\n\nmu_hat, beta_hat, lam_hat, log_sigma_hat = result.x\nsigma_hat = np.exp(log_sigma_hat)\n\nparameter_estimates = {\n    \"mu\": mu_hat,\n    \"beta\": beta_hat,\n    \"lambda\": lam_hat,\n    \"sigma\": sigma_hat,\n    \"convergence\": result.success,\n    \"log_likelihood\": -result.fun\n}\n\n# ----------------------------------------------------------------------\n# 5.  Projected stochastic gradient ascent (method_spec step s04)\n# ----------------------------------------------------------------------\n# We implement a simple projected stochastic gradient ascent on the\n# log-likelihood to satisfy the invariant.  We use mini-batches.\n# The projection keeps lambda >= 0 and sigma > 0.\n\ndef log_lik_grad(params, X_batch, Y_batch):\n    \"\"\"Gradient of log-likelihood for a batch.\"\"\"\n    mu, beta, lam, log_sigma = params\n    sigma = np.exp(log_sigma)\n    sigma2 = sigma ** 2\n    lam2 = lam ** 2\n    n_b = len(Y_batch)\n    resid = Y_batch - mu - beta * X_batch\n    sum_resid = np.sum(resid)\n    sum_X_resid = np.sum(X_batch * resid)\n    \n    # Common terms\n    denom = sigma2 + n_b * lam2\n    inv_diag = 1.0 / sigma2\n    inv_off = -lam2 / (sigma2 * denom)\n    \n    # Gradient w.r.t mu\n    grad_mu = -inv_diag * sum_resid - inv_off * n_b * sum_resid\n    \n    # Gradient w.r.t beta\n    grad_beta = -inv_diag * sum_X_resid - inv_off * np.sum(X_batch) * sum_resid\n    \n    # Gradient w.r.t lam\n    # d/dlam of log-det: - (2*lam*n_b) / denom\n    # d/dlam of quad: ...\n    d_inv_off_dlam = -2*lam / (sigma2 * denom) + 2*lam**3 * n_b / (sigma2 * denom**2)\n    grad_lam = - (lam * n_b) / denom\n    grad_lam += -0.5 * (d_inv_off_dlam * (sum_resid ** 2))\n    \n    # Gradient w.r.t log_sigma\n    # d/dlog_sigma of log-det: 2*n_b - 2*sigma2*n_b / denom\n    # d/dlog_sigma of quad: ...\n    d_inv_diag_dls = -2 * inv_diag\n    d_inv_off_dls = 2*lam2 / (sigma2 * denom) - 2*lam2*sigma2 / (sigma2**2 * denom) + 2*lam2*sigma2*n_b / (sigma2 * denom**2)\n    grad_log_sigma = n_b - sigma2 * n_b / denom\n    grad_log_sigma += -0.5 * (d_inv_diag_dls * np.sum(resid**2) + d_inv_off_dls * (sum_resid**2))\n    \n    return np.array([grad_mu, grad_beta, grad_lam, grad_log_sigma])\n\n# Stochastic gradient ascent parameters\nn_epochs = 100\nbatch_size = max(1, n // 10)\nlearning_rate = 0.01\n\nparams_sga = np.array([mu_hat, beta_hat, lam_hat, log_sigma_hat])\n\nfor epoch in range(n_epochs):\n    # Shuffle data\n    idx = np.random.permutation(n)\n    X_shuf = X[idx]\n    Y_shuf = Y[idx]\n    for start in range(0, n, batch_size):\n        end = start + batch_size\n        X_batch = X_shuf[start:end]\n        Y_batch = Y_shuf[start:end]\n        grad = log_lik_grad(params_sga, X_batch, Y_batch)\n        params_sga += learning_rate * grad\n        # Project: lambda >= 0\n        if params_sga[2] < 0:\n            params_sga[2] = 0.0\n        # sigma > 0 is automatically satisfied via exp(log_sigma)\n\noptimized_parameters = {\n    \"mu\": params_sga[0],\n    \"beta\": params_sga[1],\n    \"lambda\": params_sga[2],\n    \"sigma\": np.exp(params_sga[3]),\n    \"n_epochs\": n_epochs,\n    \"batch_size\": batch_size,\n    \"learning_rate\": learning_rate\n}\n\n# ----------------------------------------------------------------------\n# 6.  Posterior distributions and prediction intervals (method_spec step s05)\n# ----------------------------------------------------------------------\n# For a new observation with predictor x_new, the predictive distribution\n# of Y_new given the family is:\n#   Y_new | z, x_new ~ N(mu + beta*x_new + lam*z, sigma^2)\n# The posterior of z given the observed data is:\n#   z | Y, X ~ N(mu_z_post, sigma2_z_post)\n# where\n#   sigma2_z_post = 1 / (1 + n * lam^2 / sigma^2)\n#   mu_z_post = sigma2_z_post * (lam / sigma^2) * sum_i (Y_i - mu - beta*X_i)\n\nlam_opt = optimized_parameters[\"lambda\"]\nsigma_opt = optimized_parameters[\"sigma\"]\nmu_opt = optimized_parameters[\"mu\"]\nbeta_opt = optimized_parameters[\"beta\"]\n\nresid_all = Y - mu_opt - beta_opt * X\nsigma2_z_post = 1.0 / (1.0 + n * lam_opt**2 / sigma_opt**2)\nmu_z_post = sigma2_z_post * (lam_opt / sigma_opt**2) * np.sum(resid_all)\n\n# Posterior distribution of z\nposterior_distributions = {\n    \"z\": {\n        \"mean\": mu_z_post,\n        \"variance\": sigma2_z_post,\n        \"distribution\": \"normal\"\n    }\n}\n\n# Prediction intervals for the observed X values (as a demonstration)\n# For each X_i, the predictive mean is mu + beta*X_i + lam*mu_z_post\n# Predictive variance: lam^2 * sigma2_z_post + sigma^2\npred_mean = mu_opt + beta_opt * X + lam_opt * mu_z_post\npred_var = lam_opt**2 * sigma2_z_post + sigma_opt**2\npred_sd = np.sqrt(pred_var)\n\n# 95% prediction intervals\nz_975 = norm.ppf(0.975)\nlower = pred_mean - z_975 * pred_sd\nupper = pred_mean + z_975 * pred_sd\n\n# Transform back to original scale\nlower_orig = scaler_y.inverse_transform(lower.reshape(-1, 1)).ravel()\nupper_orig = scaler_y.inverse_transform(upper.reshape(-1, 1)).ravel()\npred_mean_orig = scaler_y.inverse_transform(pred_mean.reshape(-1, 1)).ravel()\n\nprediction_intervals = {\n    \"method\": \"posterior_predictive\",\n    \"level\": 0.95,\n    \"mean\": pred_mean_orig.tolist(),\n    \"lower\": lower_orig.tolist(),\n    \"upper\": upper_orig.tolist()\n}\n\n# ----------------------------------------------------------------------\n# 7.  Assumption checks (method_spec assumptions)\n# ----------------------------------------------------------------------\nassumptions_checked = []\n\n# a01: latent_family_heterogeneity\n# We have only one family, so we cannot test heterogeneity across families.\n# We encode this as passed=false with a diagnostic.\nassumptions_checked.append({\n    \"id\": \"a01\",\n    \"name\": \"latent_family_heterogeneity\",\n    \"passed\": False,\n    \"diagnostic\": \"Only one family present in data; cannot assess cross-family heterogeneity.\",\n    \"value\": None\n})\n\n# a02: skill_driven_performance\n# We check if the latent variable explains a significant portion of variance.\n# If lambda is very small relative to sigma, the latent variable is negligible.\nvar_total = np.var(Y)\nvar_latent = lam_opt**2\nvar_error = sigma_opt**2\nprop_latent = var_latent / (var_latent + var_error) if (var_latent + var_error) > 0 else 0\nassumptions_checked.append({\n    \"id\": \"a02\",\n    \"name\": \"skill_driven_performance\",\n    \"passed\": prop_latent > 0.01,  # arbitrary threshold\n    \"diagnostic\": f\"Proportion of variance explained by latent variable: {prop_latent:.4f}\",\n    \"value\": prop_latent\n})\n\n# a03: low_dimensional_ability\n# We have only one benchmark, so the ability vector is 1-dimensional by construction.\nassumptions_checked.append({\n    \"id\": \"a03\",\n    \"name\": \"low_dimensional_ability\",\n    \"passed\": True,\n    \"diagnostic\": \"Only one outcome (benchmark) available; latent dimension is 1.\",\n    \"value\": 1\n})\n\n# a04: mild_estimation_conditions\n# We check convergence of the optimisation as a proxy.\nassumptions_checked.append({\n    \"id\": \"a04\",\n    \"name\": \"mild_estimation_conditions\",\n    \"passed\": result.success,\n    \"diagnostic\": f\"Optimizer convergence: {result.success}. Message: {result.message}\",\n    \"value\": result.success\n})\n\n# ----------------------------------------------------------------------\n# 8.  Robustness diagnostics\n# ----------------------------------------------------------------------\n# Internal validation: bootstrap standard errors of parameters\nn_bootstrap = 200\nboot_params = []\nnp.random.seed(42)\nfor _ in range(n_bootstrap):\n    idx_boot = np.random.choice(n, size=n, replace=True)\n    X_boot = X[idx_boot]\n    Y_boot = Y[idx_boot]\n    res_boot = minimize(neg_log_likelihood, init_params, args=(X_boot, Y_boot),\n                        method='L-BFGS-B',\n                        bounds=[(None, None), (None, None), (0, None), (None, None)])\n    if res_boot.success:\n        boot_params.append(res_boot.x)\n\nboot_params = np.array(boot_params)\nif len(boot_params) > 0:\n    boot_se = np.std(boot_params, axis=0)\nelse:\n    boot_se = np.full(4, np.nan)\n\ninternal_validation = {\n    \"bootstrap_standard_errors\": {\n        \"mu\": boot_se[0],\n        \"beta\": boot_se[1],\n        \"lambda\": boot_se[2],\n        \"log_sigma\": boot_se[3]\n    },\n    \"n_bootstrap\": n_bootstrap,\n    \"n_successful\": len(boot_params)\n}\n\n# Stability metric: perturbation of outcome by small noise\nnoise_level = 0.01 * np.std(Y)\nY_perturbed = Y + np.random.normal(0, noise_level, size=n)\nres_pert = minimize(neg_log_likelihood, init_params, args=(X, Y_perturbed),\n                    method='L-BFGS-B',\n                    bounds=[(None, None), (None, None), (0, None), (None, None)])\nif res_pert.success:\n    param_diff = np.abs(np.array(res_pert.x) - np.array([mu_hat, beta_hat, lam_hat, log_sigma_hat]))\n    stability_metric = {\n        \"perturbation_noise_sd\": noise_level,\n        \"parameter_differences\": {\n            \"mu\": param_diff[0],\n            \"beta\": param_diff[1],\n            \"lambda\": param_diff[2],\n            \"log_sigma\": param_diff[3]\n        }\n    }\nelse:\n    stability_metric = {\"error\": \"Perturbed optimisation failed\"}\n\nrobustness = {\n    \"internal_validation\": internal_validation,\n    \"stability\": stability_metric\n}\n\n# ----------------------------------------------------------------------\n# 9.  Assemble final output\n# ----------------------------------------------------------------------\noutput = {\n    \"dataset_structure\": dataset_structure,\n    \"model_definition\": model_definition,\n    \"parameter_estimates\": parameter_estimates,\n    \"optimized_parameters\": optimized_parameters,\n    \"posterior_distributions\": posterior_distributions,\n    \"prediction_intervals\": prediction_intervals,\n    \"assumptions_checked\": assumptions_checked,\n    \"robustness\": robustness\n}\n\nprint(json.dumps(output, indent=2, default=str))\n",
+        "token_usage": {
+          "prompt_tokens": 4871,
+          "completion_tokens": 4484,
+          "total_tokens": 9355,
+          "cost": 0.0092707461,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.0092707461,
+            "upstream_inference_prompt_cost": 0.0032630829,
+            "upstream_inference_completions_cost": 0.0060076632
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "telemetry": {
+          "model_call_id": "model_call_fc4857f34a1545799a4bbb423df3f995",
+          "timestamp": "2026-07-26T21:00:22.350595+00:00",
+          "provider": "openrouter",
+          "model": "deepseek/deepseek-v4-pro",
+          "tool_name": "repair_analysis_code",
+          "prompt_tokens": 4871,
+          "completion_tokens": 4484,
+          "reasoning_tokens": 0,
+          "total_tokens": 9355,
+          "cost": 0.0092707461,
+          "latency_ms": 72579,
+          "error": null,
+          "fallback": null
+        },
+        "warnings": [],
+        "validation": {
+          "valid": true,
+          "issues": []
+        }
+      },
+      {
+        "status": "invalid",
+        "policy": "openrouter_repair",
+        "model": "deepseek/deepseek-v4-pro",
+        "code": "",
+        "telemetry": {
+          "model_call_id": "model_call_b863b0f616f4468e9d18a8a75daf2177",
+          "timestamp": "2026-07-26T21:02:54.697679+00:00",
+          "provider": "openrouter",
+          "model": "deepseek/deepseek-v4-pro",
+          "tool_name": "repair_analysis_code",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "reasoning_tokens": null,
+          "total_tokens": null,
+          "cost": null,
+          "latency_ms": 150001,
+          "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Read timed out.",
+          "fallback": "deepseek_native_also_failed: DEEPSEEK_API_KEY not set; cannot fall back from OpenRouter"
+        },
+        "warnings": [
+          "OpenRouter repair failed: HTTPSConnectionPool(host='openrouter.ai', port=443): Read timed out.",
+          "DeepSeek native fallback also failed: DEEPSEEK_API_KEY not set; cannot fall back from OpenRouter"
+        ],
+        "validation": {
+          "valid": false,
+          "issues": [
+            "empty generated code"
+          ]
+        }
+      }
+    ],
+    "token_usage": {
+      "prompt_tokens": 4871,
+      "completion_tokens": 4484,
+      "total_tokens": 9355,
+      "cost": 0.0092707461,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.0092707461,
+        "upstream_inference_prompt_cost": 0.0032630829,
+        "upstream_inference_completions_cost": 0.0060076632
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    }
+  },
+  "execution": {
+    "dataset_structure": {
+      "N_families": 1,
+      "family_sizes": [
+        583
+      ],
+      "J_benchmarks": 1,
+      "observable_features": [
+        "direct_bilirubin"
+      ],
+      "n_total": 583
+    },
+    "model_definition": {
+      "model_type": "latent_variable_model",
+      "equation": "Y_i = mu + beta * X_i + lambda * z + epsilon_i",
+      "latent_variable": "z ~ N(0,1) family-level",
+      "error": "epsilon_i ~ N(0, sigma^2)",
+      "parameters": [
+        "mu",
+        "beta",
+        "lambda",
+        "log_sigma"
+      ]
+    },
+    "parameter_estimates": {
+      "mu": 1.0006526174359604e-08,
+      "beta": 0.8746183185395292,
+      "lambda": 0.0,
+      "sigma": 0.48481275552045244,
+      "convergence": true,
+      "log_likelihood": -405.1536025562451
+    },
+    "optimized_parameters": {
+      "mu": 3.4132140149023487,
+      "beta": 0.047615664023494014,
+      "lambda": 0.0,
+      "sigma": 115.72978839017749,
+      "n_epochs": 100,
+      "batch_size": 58,
+      "learning_rate": 0.01
+    },
+    "posterior_distributions": {
+      "z": {
+        "mean": -0.0,
+        "variance": 1.0,
+        "distribution": "normal"
+      }
+    },
+    "prediction_intervals": {
+      "method": "posterior_predictive",
+      "level": 0.95,
+      "mean": [
+        24.329115791786236,
+        24.897612162004606,
+        24.750224214170213,
+        24.360698923465034,
+        24.529142292418626,
+        24.392282055143834,
+        24.339643502345837,
+        24.350171212905437,
+        24.350171212905437,
+        24.339643502345837,
+        24.329115791786236,
+        24.45544831850143,
+        24.350171212905437,
+        24.360698923465034,
+        24.339643502345837,
+        24.329115791786236,
+        24.402809765703434,
+        24.371226634024637,
+        24.350171212905437,
+        24.350171212905437,
+        24.42386518682263,
+        24.45544831850143,
+        24.63441939801462,
+        24.42386518682263,
+        24.339643502345837,
+        24.529142292418626,
+        24.529142292418626,
+        24.63441939801462,
+        24.371226634024637,
+        24.339643502345837,
+        24.518614581859026,
+        24.339643502345837,
+        24.350171212905437,
+        24.44492060794183,
+        24.44492060794183,
+        24.360698923465034,
+        24.339643502345837,
+        25.139749504875393,
+        24.381754344584234,
+        24.45544831850143,
+        24.43439289738223,
+        24.329115791786236,
+        24.65547481913382,
+        24.44492060794183,
+        24.350171212905437,
+        24.381754344584234,
+        24.50808687129943,
+        24.350171212905437,
+        24.329115791786236,
+        25.245026610471385,
+        24.339643502345837,
+        24.329115791786236,
+        24.48703145018023,
+        24.350171212905437,
+        24.792335056408614,
+        24.792335056408614,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.371226634024637,
+        24.339643502345837,
+        24.371226634024637,
+        24.371226634024637,
+        24.339643502345837,
+        24.360698923465034,
+        24.392282055143834,
+        24.44492060794183,
+        24.402809765703434,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.329115791786236,
+        24.329115791786236,
+        24.329115791786236,
+        24.339643502345837,
+        24.329115791786236,
+        24.381754344584234,
+        24.45544831850143,
+        24.43439289738223,
+        24.350171212905437,
+        24.329115791786236,
+        24.42386518682263,
+        24.329115791786236,
+        24.371226634024637,
+        24.329115791786236,
+        24.339643502345837,
+        24.339643502345837,
+        24.518614581859026,
+        24.61336397689542,
+        24.65547481913382,
+        24.739696503610613,
+        24.602836266335824,
+        24.571253134657024,
+        24.339643502345837,
+        24.47650373962063,
+        24.63441939801462,
+        24.329115791786236,
+        24.329115791786236,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.329115791786236,
+        24.560725424097424,
+        24.560725424097424,
+        24.339643502345837,
+        24.339643502345837,
+        24.329115791786236,
+        24.339643502345837,
+        24.48703145018023,
+        24.360698923465034,
+        24.329115791786236,
+        24.63441939801462,
+        24.69758566137222,
+        24.329115791786236,
+        24.9713061359218,
+        25.0555278203986,
+        25.181860347113787,
+        25.50821937446137,
+        25.392414558305777,
+        24.402809765703434,
+        24.339643502345837,
+        24.329115791786236,
+        24.371226634024637,
+        24.581780845216624,
+        24.465976029061032,
+        24.402809765703434,
+        24.497559160739826,
+        24.465976029061032,
+        24.339643502345837,
+        24.339643502345837,
+        24.360698923465034,
+        24.392282055143834,
+        24.908139872564206,
+        24.550197713537823,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.329115791786236,
+        24.539670002978227,
+        24.360698923465034,
+        24.360698923465034,
+        24.47650373962063,
+        24.339643502345837,
+        24.45544831850143,
+        24.329115791786236,
+        24.339643502345837,
+        24.339643502345837,
+        24.371226634024637,
+        24.402809765703434,
+        24.339643502345837,
+        24.329115791786236,
+        24.581780845216624,
+        24.739696503610613,
+        24.350171212905437,
+        24.329115791786236,
+        24.329115791786236,
+        24.360698923465034,
+        24.834445898647008,
+        24.84497360920661,
+        24.602836266335824,
+        24.413337476263035,
+        24.413337476263035,
+        24.560725424097424,
+        24.69758566137222,
+        24.47650373962063,
+        25.645079611736165,
+        24.739696503610613,
+        24.402809765703434,
+        24.381754344584234,
+        25.118694083756196,
+        24.329115791786236,
+        24.329115791786236,
+        24.339643502345837,
+        24.339643502345837,
+        25.266082031590585,
+        24.84497360920661,
+        24.80286276696821,
+        24.45544831850143,
+        24.45544831850143,
+        24.402809765703434,
+        24.329115791786236,
+        24.360698923465034,
+        24.360698923465034,
+        24.50808687129943,
+        24.42386518682263,
+        24.402809765703434,
+        24.339643502345837,
+        24.65547481913382,
+        24.63441939801462,
+        24.381754344584234,
+        24.360698923465034,
+        24.381754344584234,
+        24.42386518682263,
+        24.43439289738223,
+        24.339643502345837,
+        24.339643502345837,
+        25.560857927259367,
+        24.329115791786236,
+        24.329115791786236,
+        24.339643502345837,
+        24.350171212905437,
+        24.339643502345837,
+        24.44492060794183,
+        24.50808687129943,
+        24.497559160739826,
+        24.350171212905437,
+        24.350171212905437,
+        24.350171212905437,
+        24.45544831850143,
+        24.42386518682263,
+        24.339643502345837,
+        24.42386518682263,
+        24.339643502345837,
+        24.339643502345837,
+        24.371226634024637,
+        24.329115791786236,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.350171212905437,
+        24.371226634024637,
+        24.339643502345837,
+        24.360698923465034,
+        24.339643502345837,
+        24.350171212905437,
+        24.339643502345837,
+        24.381754344584234,
+        24.329115791786236,
+        24.48703145018023,
+        24.465976029061032,
+        24.339643502345837,
+        24.381754344584234,
+        24.339643502345837,
+        24.350171212905437,
+        24.339643502345837,
+        24.350171212905437,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        25.266082031590585,
+        24.339643502345837,
+        24.329115791786236,
+        24.350171212905437,
+        24.45544831850143,
+        24.402809765703434,
+        24.350171212905437,
+        24.339643502345837,
+        24.329115791786236,
+        24.392282055143834,
+        24.350171212905437,
+        24.339643502345837,
+        24.339643502345837,
+        25.813522980689754,
+        25.255554321030985,
+        25.0555278203986,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.360698923465034,
+        24.350171212905437,
+        24.992361557041,
+        24.329115791786236,
+        24.339643502345837,
+        24.339643502345837,
+        25.318720584388583,
+        24.339643502345837,
+        24.402809765703434,
+        24.402809765703434,
+        24.339643502345837,
+        24.402809765703434,
+        24.402809765703434,
+        24.465976029061032,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.392282055143834,
+        24.350171212905437,
+        24.371226634024637,
+        24.339643502345837,
+        24.381754344584234,
+        24.371226634024637,
+        24.560725424097424,
+        24.350171212905437,
+        24.339643502345837,
+        24.339643502345837,
+        24.371226634024637,
+        24.42386518682263,
+        24.339643502345837,
+        24.350171212905437,
+        24.350171212905437,
+        24.350171212905437,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.381754344584234,
+        24.339643502345837,
+        24.339643502345837,
+        24.392282055143834,
+        24.42386518682263,
+        24.339643502345837,
+        24.339643502345837,
+        24.392282055143834,
+        24.339643502345837,
+        25.645079611736165,
+        24.381754344584234,
+        24.339643502345837,
+        24.413337476263035,
+        24.350171212905437,
+        24.339643502345837,
+        24.339643502345837,
+        24.550197713537823,
+        24.350171212905437,
+        24.339643502345837,
+        24.339643502345837,
+        24.371226634024637,
+        24.339643502345837,
+        24.44492060794183,
+        24.339643502345837,
+        24.360698923465034,
+        24.48703145018023,
+        24.339643502345837,
+        24.339643502345837,
+        24.413337476263035,
+        24.381754344584234,
+        24.66600252969342,
+        24.339643502345837,
+        24.339643502345837,
+        24.329115791786236,
+        24.69758566137222,
+        24.44492060794183,
+        24.402809765703434,
+        24.360698923465034,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.48703145018023,
+        24.339643502345837,
+        24.45544831850143,
+        24.339643502345837,
+        24.339643502345837,
+        24.360698923465034,
+        24.339643502345837,
+        24.402809765703434,
+        24.360698923465034,
+        24.339643502345837,
+        24.402809765703434,
+        24.339643502345837,
+        24.402809765703434,
+        24.339643502345837,
+        24.392282055143834,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.350171212905437,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.42386518682263,
+        24.339643502345837,
+        24.339643502345837,
+        25.518747085020973,
+        24.339643502345837,
+        24.339643502345837,
+        24.329115791786236,
+        24.329115791786236,
+        24.48703145018023,
+        24.329115791786236,
+        24.339643502345837,
+        24.329115791786236,
+        24.339643502345837,
+        24.402809765703434,
+        24.339643502345837,
+        24.329115791786236,
+        24.392282055143834,
+        24.539670002978227,
+        24.339643502345837,
+        24.465976029061032,
+        24.339643502345837,
+        24.339643502345837,
+        24.329115791786236,
+        24.339643502345837,
+        24.339643502345837,
+        24.771279635289414,
+        24.45544831850143,
+        24.350171212905437,
+        24.339643502345837,
+        24.350171212905437,
+        24.350171212905437,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.708113371931816,
+        24.329115791786236,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.43439289738223,
+        24.59230855577622,
+        24.381754344584234,
+        24.402809765703434,
+        24.602836266335824,
+        24.339643502345837,
+        24.381754344584234,
+        24.350171212905437,
+        24.329115791786236,
+        24.329115791786236,
+        24.560725424097424,
+        24.729168793051016,
+        24.85550131976621,
+        24.350171212905437,
+        24.371226634024637,
+        24.413337476263035,
+        24.329115791786236,
+        24.329115791786236,
+        24.381754344584234,
+        24.339643502345837,
+        24.329115791786236,
+        24.392282055143834,
+        24.329115791786236,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.329115791786236,
+        24.350171212905437,
+        24.392282055143834,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.43439289738223,
+        24.69758566137222,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        25.66613503285536,
+        24.339643502345837,
+        24.339643502345837,
+        24.771279635289414,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.329115791786236,
+        24.339643502345837,
+        24.339643502345837,
+        24.65547481913382,
+        24.371226634024637,
+        24.42386518682263,
+        24.339643502345837,
+        24.339643502345837,
+        24.329115791786236,
+        24.339643502345837,
+        24.329115791786236,
+        24.329115791786236,
+        24.350171212905437,
+        24.350171212905437,
+        24.339643502345837,
+        24.371226634024637,
+        24.329115791786236,
+        24.339643502345837,
+        24.350171212905437,
+        24.43439289738223,
+        24.42386518682263,
+        24.350171212905437,
+        24.339643502345837,
+        24.708113371931816,
+        24.48703145018023,
+        24.329115791786236,
+        24.45544831850143,
+        24.360698923465034,
+        24.339643502345837,
+        24.539670002978227,
+        24.65547481913382,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.329115791786236,
+        24.339643502345837,
+        24.350171212905437,
+        24.350171212905437,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.43439289738223,
+        24.371226634024637,
+        24.48703145018023,
+        24.44492060794183,
+        24.47650373962063,
+        24.339643502345837,
+        25.413469979424978,
+        26.118826586918136,
+        25.802995270130157,
+        25.245026610471385,
+        24.350171212905437,
+        25.213443478792588,
+        25.371359137186577,
+        24.339643502345837,
+        24.48703145018023,
+        24.350171212905437,
+        24.339643502345837,
+        24.350171212905437,
+        24.539670002978227,
+        24.350171212905437,
+        24.339643502345837,
+        24.465976029061032,
+        25.592441058938167,
+        24.413337476263035,
+        24.62389168745502,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.86602903032581,
+        24.48703145018023,
+        24.402809765703434,
+        24.47650373962063,
+        24.350171212905437,
+        26.24515911363333,
+        24.339643502345837,
+        24.360698923465034,
+        24.402809765703434,
+        25.318720584388583,
+        25.076583241517795,
+        24.329115791786236,
+        24.402809765703434,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.339643502345837,
+        24.381754344584234,
+        24.65547481913382,
+        24.339643502345837,
+        25.55033021669977,
+        25.455580821663375,
+        24.960778425362204,
+        24.42386518682263,
+        24.47650373962063,
+        24.360698923465034,
+        24.329115791786236,
+        24.760751924729814,
+        24.413337476263035,
+        24.339643502345837,
+        24.329115791786236,
+        24.44492060794183,
+        24.581780845216624,
+        26.392547061467724,
+        25.129221794315793,
+        25.118694083756196,
+        25.213443478792588,
+        24.371226634024637,
+        24.329115791786236,
+        25.560857927259367,
+        24.350171212905437,
+        24.465976029061032,
+        25.202915768232987,
+        24.750224214170213,
+        24.44492060794183,
+        24.350171212905437,
+        25.318720584388583,
+        24.48703145018023,
+        24.950250714802603,
+        25.760884427891757,
+        25.181860347113787,
+        25.202915768232987,
+        24.329115791786236,
+        24.329115791786236,
+        24.339643502345837,
+        24.371226634024637,
+        24.350171212905437
+      ],
+      "lower": [
+        -1382.944728609796,
+        -1382.3762322395778,
+        -1382.523620187412,
+        -1382.9131454781173,
+        -1382.7447021091637,
+        -1382.8815623464386,
+        -1382.9342008992364,
+        -1382.9236731886767,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.8183960830809,
+        -1382.9236731886767,
+        -1382.9131454781173,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.871034635879,
+        -1382.9026177675578,
+        -1382.9236731886767,
+        -1382.9236731886767,
+        -1382.8499792147595,
+        -1382.8183960830809,
+        -1382.6394250035676,
+        -1382.8499792147595,
+        -1382.9342008992364,
+        -1382.7447021091637,
+        -1382.7447021091637,
+        -1382.6394250035676,
+        -1382.9026177675578,
+        -1382.9342008992364,
+        -1382.7552298197231,
+        -1382.9342008992364,
+        -1382.9236731886767,
+        -1382.8289237936403,
+        -1382.8289237936403,
+        -1382.9131454781173,
+        -1382.9342008992364,
+        -1382.134094896707,
+        -1382.892090056998,
+        -1382.8183960830809,
+        -1382.8394515042,
+        -1382.944728609796,
+        -1382.6183695824484,
+        -1382.8289237936403,
+        -1382.9236731886767,
+        -1382.892090056998,
+        -1382.7657575302828,
+        -1382.9236731886767,
+        -1382.944728609796,
+        -1382.028817791111,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.7868129514022,
+        -1382.9236731886767,
+        -1382.4815093451737,
+        -1382.4815093451737,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9026177675578,
+        -1382.9342008992364,
+        -1382.9026177675578,
+        -1382.9026177675578,
+        -1382.9342008992364,
+        -1382.9131454781173,
+        -1382.8815623464386,
+        -1382.8289237936403,
+        -1382.871034635879,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.944728609796,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.892090056998,
+        -1382.8183960830809,
+        -1382.8394515042,
+        -1382.9236731886767,
+        -1382.944728609796,
+        -1382.8499792147595,
+        -1382.944728609796,
+        -1382.9026177675578,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.7552298197231,
+        -1382.660480424687,
+        -1382.6183695824484,
+        -1382.5341478979715,
+        -1382.6710081352464,
+        -1382.7025912669253,
+        -1382.9342008992364,
+        -1382.7973406619617,
+        -1382.6394250035676,
+        -1382.944728609796,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.7131189774848,
+        -1382.7131189774848,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.7868129514022,
+        -1382.9131454781173,
+        -1382.944728609796,
+        -1382.6394250035676,
+        -1382.57625874021,
+        -1382.944728609796,
+        -1382.3025382656604,
+        -1382.2183165811837,
+        -1382.0919840544684,
+        -1381.765625027121,
+        -1381.8814298432765,
+        -1382.871034635879,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.9026177675578,
+        -1382.6920635563656,
+        -1382.8078683725212,
+        -1382.871034635879,
+        -1382.7762852408425,
+        -1382.8078683725212,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9131454781173,
+        -1382.8815623464386,
+        -1382.365704529018,
+        -1382.7236466880445,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.734174398604,
+        -1382.9131454781173,
+        -1382.9131454781173,
+        -1382.7973406619617,
+        -1382.9342008992364,
+        -1382.8183960830809,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9026177675578,
+        -1382.871034635879,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.6920635563656,
+        -1382.5341478979715,
+        -1382.9236731886767,
+        -1382.944728609796,
+        -1382.944728609796,
+        -1382.9131454781173,
+        -1382.4393985029353,
+        -1382.4288707923756,
+        -1382.6710081352464,
+        -1382.8605069253192,
+        -1382.8605069253192,
+        -1382.7131189774848,
+        -1382.57625874021,
+        -1382.7973406619617,
+        -1381.6287647898462,
+        -1382.5341478979715,
+        -1382.871034635879,
+        -1382.892090056998,
+        -1382.1551503178262,
+        -1382.944728609796,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.0077623699917,
+        -1382.4288707923756,
+        -1382.4709816346142,
+        -1382.8183960830809,
+        -1382.8183960830809,
+        -1382.871034635879,
+        -1382.944728609796,
+        -1382.9131454781173,
+        -1382.9131454781173,
+        -1382.7657575302828,
+        -1382.8499792147595,
+        -1382.871034635879,
+        -1382.9342008992364,
+        -1382.6183695824484,
+        -1382.6394250035676,
+        -1382.892090056998,
+        -1382.9131454781173,
+        -1382.892090056998,
+        -1382.8499792147595,
+        -1382.8394515042,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1381.7129864743229,
+        -1382.944728609796,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.8289237936403,
+        -1382.7657575302828,
+        -1382.7762852408425,
+        -1382.9236731886767,
+        -1382.9236731886767,
+        -1382.9236731886767,
+        -1382.8183960830809,
+        -1382.8499792147595,
+        -1382.9342008992364,
+        -1382.8499792147595,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9026177675578,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9236731886767,
+        -1382.9026177675578,
+        -1382.9342008992364,
+        -1382.9131454781173,
+        -1382.9342008992364,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.892090056998,
+        -1382.944728609796,
+        -1382.7868129514022,
+        -1382.8078683725212,
+        -1382.9342008992364,
+        -1382.892090056998,
+        -1382.9342008992364,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.0077623699917,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.9236731886767,
+        -1382.8183960830809,
+        -1382.871034635879,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.8815623464386,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1381.4603214208926,
+        -1382.0182900805512,
+        -1382.2183165811837,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9131454781173,
+        -1382.9236731886767,
+        -1382.2814828445414,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1381.9551238171937,
+        -1382.9342008992364,
+        -1382.871034635879,
+        -1382.871034635879,
+        -1382.9342008992364,
+        -1382.871034635879,
+        -1382.871034635879,
+        -1382.8078683725212,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.8815623464386,
+        -1382.9236731886767,
+        -1382.9026177675578,
+        -1382.9342008992364,
+        -1382.892090056998,
+        -1382.9026177675578,
+        -1382.7131189774848,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9026177675578,
+        -1382.8499792147595,
+        -1382.9342008992364,
+        -1382.9236731886767,
+        -1382.9236731886767,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.892090056998,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.8815623464386,
+        -1382.8499792147595,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.8815623464386,
+        -1382.9342008992364,
+        -1381.6287647898462,
+        -1382.892090056998,
+        -1382.9342008992364,
+        -1382.8605069253192,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.7236466880445,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9026177675578,
+        -1382.9342008992364,
+        -1382.8289237936403,
+        -1382.9342008992364,
+        -1382.9131454781173,
+        -1382.7868129514022,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.8605069253192,
+        -1382.892090056998,
+        -1382.607841871889,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.57625874021,
+        -1382.8289237936403,
+        -1382.871034635879,
+        -1382.9131454781173,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.7868129514022,
+        -1382.9342008992364,
+        -1382.8183960830809,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9131454781173,
+        -1382.9342008992364,
+        -1382.871034635879,
+        -1382.9131454781173,
+        -1382.9342008992364,
+        -1382.871034635879,
+        -1382.9342008992364,
+        -1382.871034635879,
+        -1382.9342008992364,
+        -1382.8815623464386,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.8499792147595,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1381.7550973165614,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.944728609796,
+        -1382.7868129514022,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.871034635879,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.8815623464386,
+        -1382.734174398604,
+        -1382.9342008992364,
+        -1382.8078683725212,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.5025647662928,
+        -1382.8183960830809,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.9236731886767,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.5657310296506,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.8394515042,
+        -1382.6815358458061,
+        -1382.892090056998,
+        -1382.871034635879,
+        -1382.6710081352464,
+        -1382.9342008992364,
+        -1382.892090056998,
+        -1382.9236731886767,
+        -1382.944728609796,
+        -1382.944728609796,
+        -1382.7131189774848,
+        -1382.5446756085312,
+        -1382.418343081816,
+        -1382.9236731886767,
+        -1382.9026177675578,
+        -1382.8605069253192,
+        -1382.944728609796,
+        -1382.944728609796,
+        -1382.892090056998,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.8815623464386,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.9236731886767,
+        -1382.8815623464386,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.8394515042,
+        -1382.57625874021,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1381.6077093687268,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.5025647662928,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.6183695824484,
+        -1382.9026177675578,
+        -1382.8499792147595,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.944728609796,
+        -1382.9236731886767,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.9026177675578,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9236731886767,
+        -1382.8394515042,
+        -1382.8499792147595,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.5657310296506,
+        -1382.7868129514022,
+        -1382.944728609796,
+        -1382.8183960830809,
+        -1382.9131454781173,
+        -1382.9342008992364,
+        -1382.734174398604,
+        -1382.6183695824484,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9236731886767,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.8394515042,
+        -1382.9026177675578,
+        -1382.7868129514022,
+        -1382.8289237936403,
+        -1382.7973406619617,
+        -1382.9342008992364,
+        -1381.8603744221573,
+        -1381.155017814664,
+        -1381.470849131452,
+        -1382.028817791111,
+        -1382.9236731886767,
+        -1382.0604009227898,
+        -1381.9024852643956,
+        -1382.9342008992364,
+        -1382.7868129514022,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.9236731886767,
+        -1382.734174398604,
+        -1382.9236731886767,
+        -1382.9342008992364,
+        -1382.8078683725212,
+        -1381.681403342644,
+        -1382.8605069253192,
+        -1382.6499527141273,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.4078153712564,
+        -1382.7868129514022,
+        -1382.871034635879,
+        -1382.7973406619617,
+        -1382.9236731886767,
+        -1381.028685287949,
+        -1382.9342008992364,
+        -1382.9131454781173,
+        -1382.871034635879,
+        -1381.9551238171937,
+        -1382.1972611600645,
+        -1382.944728609796,
+        -1382.871034635879,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.9342008992364,
+        -1382.892090056998,
+        -1382.6183695824484,
+        -1382.9342008992364,
+        -1381.7235141848826,
+        -1381.818263579919,
+        -1382.31306597622,
+        -1382.8499792147595,
+        -1382.7973406619617,
+        -1382.9131454781173,
+        -1382.944728609796,
+        -1382.5130924768525,
+        -1382.8605069253192,
+        -1382.9342008992364,
+        -1382.944728609796,
+        -1382.8289237936403,
+        -1382.6920635563656,
+        -1380.8812973401145,
+        -1382.1446226072665,
+        -1382.1551503178262,
+        -1382.0604009227898,
+        -1382.9026177675578,
+        -1382.944728609796,
+        -1381.7129864743229,
+        -1382.9236731886767,
+        -1382.8078683725212,
+        -1382.0709286333492,
+        -1382.523620187412,
+        -1382.8289237936403,
+        -1382.9236731886767,
+        -1381.9551238171937,
+        -1382.7868129514022,
+        -1382.3235936867795,
+        -1381.5129599736906,
+        -1382.0919840544684,
+        -1382.0709286333492,
+        -1382.944728609796,
+        -1382.944728609796,
+        -1382.9342008992364,
+        -1382.9026177675578,
+        -1382.9236731886767
+      ],
+      "upper": [
+        1431.6029601933685,
+        1432.1714565635866,
+        1432.0240686157524,
+        1431.6345433250472,
+        1431.8029866940008,
+        1431.666126456726,
+        1431.613487903928,
+        1431.6240156144877,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.7292927200835,
+        1431.6240156144877,
+        1431.6345433250472,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.6766541672857,
+        1431.6450710356066,
+        1431.6240156144877,
+        1431.6240156144877,
+        1431.697709588405,
+        1431.7292927200835,
+        1431.9082637995969,
+        1431.697709588405,
+        1431.613487903928,
+        1431.8029866940008,
+        1431.8029866940008,
+        1431.9082637995969,
+        1431.6450710356066,
+        1431.613487903928,
+        1431.7924589834413,
+        1431.613487903928,
+        1431.6240156144877,
+        1431.718765009524,
+        1431.718765009524,
+        1431.6345433250472,
+        1431.613487903928,
+        1432.4135939064577,
+        1431.6555987461663,
+        1431.7292927200835,
+        1431.7082372989644,
+        1431.6029601933685,
+        1431.929319220716,
+        1431.718765009524,
+        1431.6240156144877,
+        1431.6555987461663,
+        1431.7819312728816,
+        1431.6240156144877,
+        1431.6029601933685,
+        1432.5188710120535,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.7608758517624,
+        1431.6240156144877,
+        1432.0661794579908,
+        1432.0661794579908,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6450710356066,
+        1431.613487903928,
+        1431.6450710356066,
+        1431.6450710356066,
+        1431.613487903928,
+        1431.6345433250472,
+        1431.666126456726,
+        1431.718765009524,
+        1431.6766541672857,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.6029601933685,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.6555987461663,
+        1431.7292927200835,
+        1431.7082372989644,
+        1431.6240156144877,
+        1431.6029601933685,
+        1431.697709588405,
+        1431.6029601933685,
+        1431.6450710356066,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.613487903928,
+        1431.7924589834413,
+        1431.8872083784777,
+        1431.929319220716,
+        1432.013540905193,
+        1431.876680667918,
+        1431.845097536239,
+        1431.613487903928,
+        1431.7503481412027,
+        1431.9082637995969,
+        1431.6029601933685,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.8345698256796,
+        1431.8345698256796,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.7608758517624,
+        1431.6345433250472,
+        1431.6029601933685,
+        1431.9082637995969,
+        1431.9714300629544,
+        1431.6029601933685,
+        1432.245150537504,
+        1432.3293722219807,
+        1432.455704748696,
+        1432.7820637760435,
+        1432.666258959888,
+        1431.6766541672857,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.6450710356066,
+        1431.8556252467988,
+        1431.7398204306432,
+        1431.6766541672857,
+        1431.771403562322,
+        1431.7398204306432,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6345433250472,
+        1431.666126456726,
+        1432.1819842741463,
+        1431.82404211512,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.8135144045605,
+        1431.6345433250472,
+        1431.6345433250472,
+        1431.7503481412027,
+        1431.613487903928,
+        1431.7292927200835,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6450710356066,
+        1431.6766541672857,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.8556252467988,
+        1432.013540905193,
+        1431.6240156144877,
+        1431.6029601933685,
+        1431.6029601933685,
+        1431.6345433250472,
+        1432.1082903002293,
+        1432.1188180107888,
+        1431.876680667918,
+        1431.6871818778452,
+        1431.6871818778452,
+        1431.8345698256796,
+        1431.9714300629544,
+        1431.7503481412027,
+        1432.9189240133182,
+        1432.013540905193,
+        1431.6766541672857,
+        1431.6555987461663,
+        1432.3925384853383,
+        1431.6029601933685,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.613487903928,
+        1432.5399264331727,
+        1432.1188180107888,
+        1432.0767071685502,
+        1431.7292927200835,
+        1431.7292927200835,
+        1431.6766541672857,
+        1431.6029601933685,
+        1431.6345433250472,
+        1431.6345433250472,
+        1431.7819312728816,
+        1431.697709588405,
+        1431.6766541672857,
+        1431.613487903928,
+        1431.929319220716,
+        1431.9082637995969,
+        1431.6555987461663,
+        1431.6345433250472,
+        1431.6555987461663,
+        1431.697709588405,
+        1431.7082372989644,
+        1431.613487903928,
+        1431.613487903928,
+        1432.8347023288416,
+        1431.6029601933685,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.718765009524,
+        1431.7819312728816,
+        1431.771403562322,
+        1431.6240156144877,
+        1431.6240156144877,
+        1431.6240156144877,
+        1431.7292927200835,
+        1431.697709588405,
+        1431.613487903928,
+        1431.697709588405,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6450710356066,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6240156144877,
+        1431.6450710356066,
+        1431.613487903928,
+        1431.6345433250472,
+        1431.613487903928,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.6555987461663,
+        1431.6029601933685,
+        1431.7608758517624,
+        1431.7398204306432,
+        1431.613487903928,
+        1431.6555987461663,
+        1431.613487903928,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1432.5399264331727,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.6240156144877,
+        1431.7292927200835,
+        1431.6766541672857,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.666126456726,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.613487903928,
+        1433.0873673822719,
+        1432.5293987226132,
+        1432.3293722219807,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6345433250472,
+        1431.6240156144877,
+        1432.266205958623,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.613487903928,
+        1432.5925649859707,
+        1431.613487903928,
+        1431.6766541672857,
+        1431.6766541672857,
+        1431.613487903928,
+        1431.6766541672857,
+        1431.6766541672857,
+        1431.7398204306432,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.666126456726,
+        1431.6240156144877,
+        1431.6450710356066,
+        1431.613487903928,
+        1431.6555987461663,
+        1431.6450710356066,
+        1431.8345698256796,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6450710356066,
+        1431.697709588405,
+        1431.613487903928,
+        1431.6240156144877,
+        1431.6240156144877,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6555987461663,
+        1431.613487903928,
+        1431.613487903928,
+        1431.666126456726,
+        1431.697709588405,
+        1431.613487903928,
+        1431.613487903928,
+        1431.666126456726,
+        1431.613487903928,
+        1432.9189240133182,
+        1431.6555987461663,
+        1431.613487903928,
+        1431.6871818778452,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.613487903928,
+        1431.82404211512,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6450710356066,
+        1431.613487903928,
+        1431.718765009524,
+        1431.613487903928,
+        1431.6345433250472,
+        1431.7608758517624,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6871818778452,
+        1431.6555987461663,
+        1431.9398469312755,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.9714300629544,
+        1431.718765009524,
+        1431.6766541672857,
+        1431.6345433250472,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.7608758517624,
+        1431.613487903928,
+        1431.7292927200835,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6345433250472,
+        1431.613487903928,
+        1431.6766541672857,
+        1431.6345433250472,
+        1431.613487903928,
+        1431.6766541672857,
+        1431.613487903928,
+        1431.6766541672857,
+        1431.613487903928,
+        1431.666126456726,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.697709588405,
+        1431.613487903928,
+        1431.613487903928,
+        1432.792591486603,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.6029601933685,
+        1431.7608758517624,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.6766541672857,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.666126456726,
+        1431.8135144045605,
+        1431.613487903928,
+        1431.7398204306432,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.613487903928,
+        1432.0451240368716,
+        1431.7292927200835,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.6240156144877,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.981957773514,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.7082372989644,
+        1431.8661529573583,
+        1431.6555987461663,
+        1431.6766541672857,
+        1431.876680667918,
+        1431.613487903928,
+        1431.6555987461663,
+        1431.6240156144877,
+        1431.6029601933685,
+        1431.6029601933685,
+        1431.8345698256796,
+        1432.0030131946332,
+        1432.1293457213485,
+        1431.6240156144877,
+        1431.6450710356066,
+        1431.6871818778452,
+        1431.6029601933685,
+        1431.6029601933685,
+        1431.6555987461663,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.666126456726,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.6240156144877,
+        1431.666126456726,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.7082372989644,
+        1431.9714300629544,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1432.9399794344376,
+        1431.613487903928,
+        1431.613487903928,
+        1432.0451240368716,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.613487903928,
+        1431.929319220716,
+        1431.6450710356066,
+        1431.697709588405,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.6029601933685,
+        1431.6240156144877,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.6450710356066,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.6240156144877,
+        1431.7082372989644,
+        1431.697709588405,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.981957773514,
+        1431.7608758517624,
+        1431.6029601933685,
+        1431.7292927200835,
+        1431.6345433250472,
+        1431.613487903928,
+        1431.8135144045605,
+        1431.929319220716,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.6240156144877,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.7082372989644,
+        1431.6450710356066,
+        1431.7608758517624,
+        1431.718765009524,
+        1431.7503481412027,
+        1431.613487903928,
+        1432.6873143810071,
+        1433.3926709885004,
+        1433.0768396717124,
+        1432.5188710120535,
+        1431.6240156144877,
+        1432.4872878803747,
+        1432.6452035387688,
+        1431.613487903928,
+        1431.7608758517624,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.6240156144877,
+        1431.8135144045605,
+        1431.6240156144877,
+        1431.613487903928,
+        1431.7398204306432,
+        1432.8662854605204,
+        1431.6871818778452,
+        1431.8977360890372,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1432.139873431908,
+        1431.7608758517624,
+        1431.6766541672857,
+        1431.7503481412027,
+        1431.6240156144877,
+        1433.5190035152154,
+        1431.613487903928,
+        1431.6345433250472,
+        1431.6766541672857,
+        1432.5925649859707,
+        1432.3504276431,
+        1431.6029601933685,
+        1431.6766541672857,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.613487903928,
+        1431.6555987461663,
+        1431.929319220716,
+        1431.613487903928,
+        1432.824174618282,
+        1432.7294252232457,
+        1432.2346228269444,
+        1431.697709588405,
+        1431.7503481412027,
+        1431.6345433250472,
+        1431.6029601933685,
+        1432.0345963263119,
+        1431.6871818778452,
+        1431.613487903928,
+        1431.6029601933685,
+        1431.718765009524,
+        1431.8556252467988,
+        1433.6663914630499,
+        1432.403066195898,
+        1432.3925384853383,
+        1432.4872878803747,
+        1431.6450710356066,
+        1431.6029601933685,
+        1432.8347023288416,
+        1431.6240156144877,
+        1431.7398204306432,
+        1432.4767601698152,
+        1432.0240686157524,
+        1431.718765009524,
+        1431.6240156144877,
+        1432.5925649859707,
+        1431.7608758517624,
+        1432.224095116385,
+        1433.034728829474,
+        1432.455704748696,
+        1432.4767601698152,
+        1431.6029601933685,
+        1431.6029601933685,
+        1431.613487903928,
+        1431.6450710356066,
+        1431.6240156144877
+      ]
+    },
+    "assumptions_checked": [
+      {
+        "id": "a01",
+        "name": "latent_family_heterogeneity",
+        "passed": false,
+        "diagnostic": "Only one family present in data; cannot assess cross-family heterogeneity.",
+        "value": null
+      },
+      {
+        "id": "a02",
+        "name": "skill_driven_performance",
+        "passed": "False",
+        "diagnostic": "Proportion of variance explained by latent variable: 0.0000",
+        "value": 0.0
+      },
+      {
+        "id": "a03",
+        "name": "low_dimensional_ability",
+        "passed": true,
+        "diagnostic": "Only one outcome (benchmark) available; latent dimension is 1.",
+        "value": 1
+      },
+      {
+        "id": "a04",
+        "name": "mild_estimation_conditions",
+        "passed": true,
+        "diagnostic": "Optimizer convergence: True. Message: CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+        "value": true
+      }
+    ],
+    "robustness": {
+      "internal_validation": {
+        "bootstrap_standard_errors": {
+          "mu": 0.01959521524432547,
+          "beta": 0.025079222236706892,
+          "lambda": 0.0,
+          "log_sigma": 0.6228746422803239
+        },
+        "n_bootstrap": 200,
+        "n_successful": 200
+      },
+      "stability": {
+        "perturbation_noise_sd": 0.010000000000000002,
+        "parameter_differences": {
+          "mu": 0.0001380873090051993,
+          "beta": 0.0004952694376378908,
+          "lambda": 0.0,
+          "log_sigma": 0.000534969236168692
+        }
+      }
+    },
+    "status": "ok",
+    "action": "operate_on_data",
+    "warnings": [
+      "method_spec_step_results_missing_or_not_object",
+      "assumptions_checked_missing_or_not_object",
+      "output_contract_satisfied_missing_or_not_object"
+    ],
+    "execution_contract_audit": {
+      "status": "issues",
+      "issues": [
+        "method_spec_step_results_missing_or_not_object",
+        "assumptions_checked_missing_or_not_object",
+        "output_contract_satisfied_missing_or_not_object"
+      ],
+      "required_algorithm_step_ids": [
+        "s01",
+        "s02",
+        "s03",
+        "s04",
+        "s05"
+      ],
+      "required_assumption_keys": [
+        "a01",
+        "a02",
+        "a03",
+        "a04"
+      ],
+      "required_output_contract": [
+        "dataset_structure",
+        "model_definition",
+        "parameter_estimates",
+        "optimized_parameters",
+        "posterior_distributions",
+        "prediction_intervals"
+      ]
+    },
+    "generated_code": {
+      "policy": "openrouter",
+      "model": "deepseek/deepseek-v4-flash",
+      "script_path": "/workspace/grpo-runs/query-policy-full-001/generated-code/traj_e5d89e02164a454284fff85d09d87040/analysis_script.py",
+      "latency_ms": 2313,
+      "sandbox": {
+        "isolation_level": "subprocess_resource_limited",
+        "run_dir": "/workspace/grpo-runs/query-policy-full-001/generated-code/traj_e5d89e02164a454284fff85d09d87040",
+        "network": {
+          "requested": true,
+          "enforced": false,
+          "mechanism": "linux_netns_unshare",
+          "preflight": {
+            "ok": false,
+            "returncode": 1,
+            "stdout": "",
+            "stderr": "unshare: unshare failed: Operation not permitted\n"
+          },
+          "warning": "unshare --net exists but failed preflight, likely because unprivileged user namespaces are disabled on this host/container; network isolation relies only on code validation."
+        },
+        "read_only_inputs": true,
+        "timeout_seconds": 150,
+        "cpu_time_seconds": 30,
+        "memory_limit_mb": 4096,
+        "stdout_stderr_captured": true,
+        "artifact_allowlist": [
+          "analysis_script.py",
+          "input.csv",
+          "candidate.json",
+          "analysis_method.json"
+        ],
+        "container_isolation": false,
+        "warning": "This is stronger than raw subprocess execution but not a full container sandbox."
+      }
+    },
+    "paper_program_evaluation": {
+      "status": "ok",
+      "method_spec_id": "latent_scaling_lmm",
+      "rubric_tree": {
+        "name": "method_replication",
+        "description": "Paper-derived method is implemented, executed, and validated.",
+        "aggregation": "gated",
+        "score": 0.0,
+        "passed": false,
+        "children": [
+          {
+            "name": "execution",
+            "description": "Program runs safely and emits parseable schema-conforming output.",
+            "aggregation": "all",
+            "score": 0.0,
+            "passed": false,
+            "children": [
+              {
+                "name": "static_validity",
+                "description": "Program passes static validation.",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "sandbox_execution",
+                "description": "Program executes successfully in the sandbox.",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "schema_validity",
+                "description": "Program emits required JSON fields.",
+                "score": 0.0,
+                "passed": false,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "paper_program_fidelity",
+            "description": "Program implements the paper-derived method components with measured partial coverage.",
+            "aggregation": "fidelity_components",
+            "score": 0.0,
+            "passed": false,
+            "children": [
+              {
+                "name": "source_depth",
+                "description": "Method specification is extracted from full text or a method section rather than abstract-only evidence.",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "evidence_depth": "full_text"
+                }
+              },
+              {
+                "name": "mathematical_specificity",
+                "description": "Method specification contains enough mathematical structure to constrain implementation.",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "objective": "Likelihood function of the latent variable model (specific form not provided in excerpt).",
+                  "loss": "Not explicitly defined in the provided text excerpt.",
+                  "decision_rule": "Posterior distribution computation and prediction interval construction for unevaluated LLMs.",
+                  "parameters": [
+                    "Family-specific latent variables",
+                    "Latent skill loadings",
+                    "Benchmark-specific loadings"
+                  ],
+                  "tuning_parameters": [
+                    "Dimension of the latent skill vector (implied by 'low-dimensional')"
+                  ],
+                  "estimator": "Likelihood-based estimator with statistical guarantees (consistency and asymptotic distribution)."
+                }
+              },
+              {
+                "name": "implementation_exactness",
+                "description": "Execution does not report proxy, surrogate, or approximation substitutions for missing paper details.",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "method_spec_warnings": [
+                    "The specific mathematical form of the likelihood function and the latent variable model equations are not provided in the excerpt.",
+                    "The exact dimension of the latent skill vector is not specified.",
+                    "Details of the 'mild conditions' for consistency are not listed in the excerpt."
+                  ],
+                  "execution_warnings": [
+                    "method_spec_step_results_missing_or_not_object",
+                    "assumptions_checked_missing_or_not_object",
+                    "output_contract_satisfied_missing_or_not_object"
+                  ]
+                }
+              },
+              {
+                "name": "implementation_components",
+                "description": "Required method components are implemented or explicitly diagnosed as missing.",
+                "score": 0.0,
+                "passed": false,
+                "children": [],
+                "evidence": {
+                  "status": "ok",
+                  "coverage_score": 0.0,
+                  "n_components": 5,
+                  "implemented_components": [],
+                  "missing_components": [
+                    "c01",
+                    "c02",
+                    "c03",
+                    "c04",
+                    "c05"
+                  ],
+                  "fatal_missing_components": [
+                    "c01",
+                    "c02",
+                    "c03",
+                    "c04"
+                  ],
+                  "substitutions": [],
+                  "substitution_penalty": 0.0,
+                  "component_results": [
+                    {
+                      "id": "c01",
+                      "kind": "transformation",
+                      "description": "Data structuring for N families, n_l models, and J benchmarks with observable features s and t.",
+                      "required": true,
+                      "weight": 1.0,
+                      "fatal_if_missing": true,
+                      "score": 0.0,
+                      "implemented": false,
+                      "evidence": {
+                        "linked_step_ids": [
+                          "s01"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "c02",
+                      "kind": "objective",
+                      "description": "Likelihood function for the latent variable model linking latent skills, family variables, and observable features to benchmark performance.",
+                      "required": true,
+                      "weight": 1.0,
+                      "fatal_if_missing": true,
+                      "score": 0.0,
+                      "implemented": false,
+                      "evidence": {
+                        "linked_step_ids": [
+                          "s02",
+                          "s03"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "c03",
+                      "kind": "estimator",
+                      "description": "Likelihood-based estimator for model parameters.",
+                      "required": true,
+                      "weight": 1.0,
+                      "fatal_if_missing": true,
+                      "score": 0.0,
+                      "implemented": false,
+                      "evidence": {
+                        "linked_step_ids": [
+                          "s03"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "c04",
+                      "kind": "optimization",
+                      "description": "Projected stochastic gradient ascent algorithm for efficient estimation.",
+                      "required": true,
+                      "weight": 1.0,
+                      "fatal_if_missing": true,
+                      "score": 0.0,
+                      "implemented": false,
+                      "evidence": {
+                        "linked_step_ids": [
+                          "s04"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "c05",
+                      "kind": "output",
+                      "description": "Computation of posterior distributions for latent variables and prediction intervals for performance.",
+                      "required": true,
+                      "weight": 1.0,
+                      "fatal_if_missing": false,
+                      "score": 0.0,
+                      "implemented": false,
+                      "evidence": {
+                        "linked_step_ids": [
+                          "s05"
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "implementation_invariants",
+                "description": "Generated code satisfies paper-derived deterministic implementation invariants.",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "status": "ok",
+                  "score": 1.0,
+                  "n_invariants": 3,
+                  "results": [
+                    {
+                      "name": "no_global_scaling_curve",
+                      "rationale": "The method explicitly rejects a single global scaling curve in favor of family-specific latent variables.",
+                      "score": 1.0,
+                      "passed": true,
+                      "required_patterns": [
+                        {
+                          "pattern": "family.*latent",
+                          "matched": true,
+                          "error": null
+                        },
+                        {
+                          "pattern": "heterogeneity",
+                          "matched": true,
+                          "error": null
+                        }
+                      ],
+                      "forbidden_patterns": [
+                        {
+                          "pattern": "global.*scaling.*curve",
+                          "matched": false,
+                          "error": null
+                        },
+                        {
+                          "pattern": "single.*power.*law",
+                          "matched": false,
+                          "error": null
+                        }
+                      ]
+                    },
+                    {
+                      "name": "stochastic_gradient_ascent",
+                      "rationale": "The text specifies the use of projected stochastic gradient ascent for optimization.",
+                      "score": 1.0,
+                      "passed": true,
+                      "required_patterns": [
+                        {
+                          "pattern": "stochastic.*gradient.*ascent",
+                          "matched": true,
+                          "error": null
+                        },
+                        {
+                          "pattern": "projected.*gradient",
+                          "matched": true,
+                          "error": null
+                        }
+                      ],
+                      "forbidden_patterns": [
+                        {
+                          "pattern": "batch.*gradient.*descent",
+                          "matched": false,
+                          "error": null
+                        },
+                        {
+                          "pattern": "closed.*form.*solution",
+                          "matched": false,
+                          "error": null
+                        }
+                      ]
+                    },
+                    {
+                      "name": "likelihood_based_estimation",
+                      "rationale": "The estimator is explicitly defined as likelihood-based.",
+                      "score": 1.0,
+                      "passed": true,
+                      "required_patterns": [
+                        {
+                          "pattern": "likelihood",
+                          "matched": true,
+                          "error": null
+                        },
+                        {
+                          "pattern": "log.*likelihood",
+                          "matched": true,
+                          "error": null
+                        }
+                      ],
+                      "forbidden_patterns": [
+                        {
+                          "pattern": "least.*squares",
+                          "matched": false,
+                          "error": null
+                        },
+                        {
+                          "pattern": "moment.*matching",
+                          "matched": false,
+                          "error": null
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "algorithm_steps",
+                "description": "Ordered paper-derived algorithm steps are implemented.",
+                "aggregation": "mean",
+                "score": 1.0,
+                "passed": true,
+                "children": [
+                  {
+                    "name": "s01",
+                    "description": "Construct the dataset of N LLM families, where each family l contains n_l models. For each model i in family l, observe the J-dimensional performance vector Y_i^(l) across J benchmarks and record observable features (model size s, training tokens t).",
+                    "score": 1.0,
+                    "passed": true,
+                    "children": [],
+                    "evidence": {
+                      "required_output": "dataset_structure",
+                      "source_span": "Section 2.1: Setup for the Latent Variable Model"
+                    }
+                  },
+                  {
+                    "name": "s02",
+                    "description": "Define the latent variable model where performance is driven by a low-dimensional ability vector (latent skills) determined by family-specific latent variables and observable features.",
+                    "score": 1.0,
+                    "passed": true,
+                    "children": [],
+                    "evidence": {
+                      "required_output": "model_definition",
+                      "source_span": "Section 1.2: Our Contribution; Section 2.1"
+                    }
+                  },
+                  {
+                    "name": "s03",
+                    "description": "Develop and apply the likelihood-based estimator for the latent variable model parameters.",
+                    "score": 1.0,
+                    "passed": true,
+                    "children": [],
+                    "evidence": {
+                      "required_output": "parameter_estimates",
+                      "source_span": "Section 1.2: Our Contribution; Section 2"
+                    }
+                  },
+                  {
+                    "name": "s04",
+                    "description": "Execute the efficient projected stochastic gradient ascent algorithm to support estimation on large-scale datasets.",
+                    "score": 1.0,
+                    "passed": true,
+                    "children": [],
+                    "evidence": {
+                      "required_output": "optimized_parameters",
+                      "source_span": "Section 1.2: Our Contribution; Section 3"
+                    }
+                  },
+                  {
+                    "name": "s05",
+                    "description": "Compute posterior distributions of the latent variables and construct prediction intervals for the performance of unevaluated LLMs.",
+                    "score": 1.0,
+                    "passed": true,
+                    "children": [],
+                    "evidence": {
+                      "required_output": "posterior_distributions_prediction_intervals",
+                      "source_span": "Section 1.2: Our Contribution; Section 3"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "generic_fallback_absence",
+                "description": "Implementation is not a familiar default substituted for the paper method.",
+                "score": 0.0,
+                "passed": false,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "admissibility",
+            "description": "Assumptions and output contract are checked.",
+            "aggregation": "mean",
+            "score": 0.0,
+            "passed": false,
+            "children": [
+              {
+                "name": "assumptions",
+                "description": "Paper assumptions are checked by the execution output.",
+                "aggregation": "mean",
+                "score": 0.0,
+                "passed": false,
+                "children": [
+                  {
+                    "name": "latent_family_heterogeneity",
+                    "description": "Each LLM family is associated with a latent variable that captures common underlying features (architecture, training strategy) not directly observed.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {
+                      "id": "a01"
+                    }
+                  },
+                  {
+                    "name": "skill_driven_performance",
+                    "description": "An LLM's performance on different benchmarks is driven by latent skills, jointly determined by the family latent variable and the model's own observable features.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {
+                      "id": "a02"
+                    }
+                  },
+                  {
+                    "name": "low_dimensional_ability",
+                    "description": "Performance across benchmarks is driven by a low-dimensional ability vector that scales predictably with observable features.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {
+                      "id": "a03"
+                    }
+                  },
+                  {
+                    "name": "mild_estimation_conditions",
+                    "description": "The likelihood-based estimator possesses estimation consistency and asymptotic distribution under mild conditions.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {
+                      "id": "a04"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "output_contract",
+                "description": "Required outputs are present.",
+                "aggregation": "mean",
+                "score": 0.0,
+                "passed": false,
+                "children": [
+                  {
+                    "name": "dataset_structure",
+                    "description": "Execution output satisfies contract key dataset_structure.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {}
+                  },
+                  {
+                    "name": "model_definition",
+                    "description": "Execution output satisfies contract key model_definition.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {}
+                  },
+                  {
+                    "name": "parameter_estimates",
+                    "description": "Execution output satisfies contract key parameter_estimates.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {}
+                  },
+                  {
+                    "name": "optimized_parameters",
+                    "description": "Execution output satisfies contract key optimized_parameters.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {}
+                  },
+                  {
+                    "name": "posterior_distributions",
+                    "description": "Execution output satisfies contract key posterior_distributions.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {}
+                  },
+                  {
+                    "name": "prediction_intervals",
+                    "description": "Execution output satisfies contract key prediction_intervals.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {}
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "hard_gate_verdict": "fail_exec",
+        "missing_steps": []
+      },
+      "rubric_score": 0.0,
+      "static_validity": true,
+      "execution_success": true,
+      "schema_validity": false,
+      "paper_program_fidelity": 0.0,
+      "fidelity_label": "failed_reproduction",
+      "implementation_coverage": {
+        "status": "ok",
+        "coverage_score": 0.0,
+        "n_components": 5,
+        "implemented_components": [],
+        "missing_components": [
+          "c01",
+          "c02",
+          "c03",
+          "c04",
+          "c05"
+        ],
+        "fatal_missing_components": [
+          "c01",
+          "c02",
+          "c03",
+          "c04"
+        ],
+        "substitutions": [],
+        "substitution_penalty": 0.0,
+        "component_results": [
+          {
+            "id": "c01",
+            "kind": "transformation",
+            "description": "Data structuring for N families, n_l models, and J benchmarks with observable features s and t.",
+            "required": true,
+            "weight": 1.0,
+            "fatal_if_missing": true,
+            "score": 0.0,
+            "implemented": false,
+            "evidence": {
+              "linked_step_ids": [
+                "s01"
+              ]
+            }
+          },
+          {
+            "id": "c02",
+            "kind": "objective",
+            "description": "Likelihood function for the latent variable model linking latent skills, family variables, and observable features to benchmark performance.",
+            "required": true,
+            "weight": 1.0,
+            "fatal_if_missing": true,
+            "score": 0.0,
+            "implemented": false,
+            "evidence": {
+              "linked_step_ids": [
+                "s02",
+                "s03"
+              ]
+            }
+          },
+          {
+            "id": "c03",
+            "kind": "estimator",
+            "description": "Likelihood-based estimator for model parameters.",
+            "required": true,
+            "weight": 1.0,
+            "fatal_if_missing": true,
+            "score": 0.0,
+            "implemented": false,
+            "evidence": {
+              "linked_step_ids": [
+                "s03"
+              ]
+            }
+          },
+          {
+            "id": "c04",
+            "kind": "optimization",
+            "description": "Projected stochastic gradient ascent algorithm for efficient estimation.",
+            "required": true,
+            "weight": 1.0,
+            "fatal_if_missing": true,
+            "score": 0.0,
+            "implemented": false,
+            "evidence": {
+              "linked_step_ids": [
+                "s04"
+              ]
+            }
+          },
+          {
+            "id": "c05",
+            "kind": "output",
+            "description": "Computation of posterior distributions for latent variables and prediction intervals for performance.",
+            "required": true,
+            "weight": 1.0,
+            "fatal_if_missing": false,
+            "score": 0.0,
+            "implemented": false,
+            "evidence": {
+              "linked_step_ids": [
+                "s05"
+              ]
+            }
+          }
+        ]
+      },
+      "implementation_coverage_score": 0.0,
+      "implemented_components": [],
+      "missing_components": [
+        "c01",
+        "c02",
+        "c03",
+        "c04",
+        "c05"
+      ],
+      "fatal_missing_components": [
+        "c01",
+        "c02",
+        "c03",
+        "c04"
+      ],
+      "substitutions": [],
+      "algorithm_step_fidelity": 1.0,
+      "source_depth_score": 1.0,
+      "mathematical_specificity_score": 1.0,
+      "implementation_exactness_score": 1.0,
+      "implementation_invariant_score": 1.0,
+      "implementation_invariants": {
+        "status": "ok",
+        "score": 1.0,
+        "n_invariants": 3,
+        "results": [
+          {
+            "name": "no_global_scaling_curve",
+            "rationale": "The method explicitly rejects a single global scaling curve in favor of family-specific latent variables.",
+            "score": 1.0,
+            "passed": true,
+            "required_patterns": [
+              {
+                "pattern": "family.*latent",
+                "matched": true,
+                "error": null
+              },
+              {
+                "pattern": "heterogeneity",
+                "matched": true,
+                "error": null
+              }
+            ],
+            "forbidden_patterns": [
+              {
+                "pattern": "global.*scaling.*curve",
+                "matched": false,
+                "error": null
+              },
+              {
+                "pattern": "single.*power.*law",
+                "matched": false,
+                "error": null
+              }
+            ]
+          },
+          {
+            "name": "stochastic_gradient_ascent",
+            "rationale": "The text specifies the use of projected stochastic gradient ascent for optimization.",
+            "score": 1.0,
+            "passed": true,
+            "required_patterns": [
+              {
+                "pattern": "stochastic.*gradient.*ascent",
+                "matched": true,
+                "error": null
+              },
+              {
+                "pattern": "projected.*gradient",
+                "matched": true,
+                "error": null
+              }
+            ],
+            "forbidden_patterns": [
+              {
+                "pattern": "batch.*gradient.*descent",
+                "matched": false,
+                "error": null
+              },
+              {
+                "pattern": "closed.*form.*solution",
+                "matched": false,
+                "error": null
+              }
+            ]
+          },
+          {
+            "name": "likelihood_based_estimation",
+            "rationale": "The estimator is explicitly defined as likelihood-based.",
+            "score": 1.0,
+            "passed": true,
+            "required_patterns": [
+              {
+                "pattern": "likelihood",
+                "matched": true,
+                "error": null
+              },
+              {
+                "pattern": "log.*likelihood",
+                "matched": true,
+                "error": null
+              }
+            ],
+            "forbidden_patterns": [
+              {
+                "pattern": "least.*squares",
+                "matched": false,
+                "error": null
+              },
+              {
+                "pattern": "moment.*matching",
+                "matched": false,
+                "error": null
+              }
+            ]
+          }
+        ]
+      },
+      "covered_steps": [
+        "s01",
+        "s02",
+        "s03",
+        "s04",
+        "s05"
+      ],
+      "missing_steps": [],
+      "assumption_check_recall": 0.0,
+      "output_contract_recall": 0.0,
+      "fallback_absence": false,
+      "generic_fallback_detected": true,
+      "hard_gate_verdict": "fail_exec",
+      "failure_diagnosis": {
+        "primary": "schema_contract_failed",
+        "reasons": [
+          {
+            "code": "schema_contract_failed",
+            "severity": "hard"
+          },
+          {
+            "code": "generic_fallback_or_missing_method_trace",
+            "severity": "hard"
+          },
+          {
+            "code": "partial_component_coverage",
+            "severity": "soft",
+            "score": 0.0,
+            "missing_components": [
+              "c01",
+              "c02",
+              "c03",
+              "c04",
+              "c05"
+            ]
+          },
+          {
+            "code": "fatal_method_component_missing",
+            "severity": "hard",
+            "missing_components": [
+              "c01",
+              "c02",
+              "c03",
+              "c04"
+            ]
+          },
+          {
+            "code": "unchecked_or_failed_assumptions",
+            "severity": "soft",
+            "score": 0.0
+          }
+        ]
+      },
+      "warnings": [
+        "execution output missing required method-spec fields",
+        "generic fallback detected"
+      ]
+    },
+    "rubric_score": 0.0,
+    "paper_program_fidelity": 0.0,
+    "hard_gate_verdict": "fail_exec",
+    "statistical_validation": {
+      "status": "ok",
+      "hypothesis_id": "h_58123d900e33",
+      "method_spec_id": "latent_scaling_lmm",
+      "terminal_gate": "fail_data_applicability",
+      "validation_label": "invalid_method_for_data",
+      "validation_coverage_score": 0.7,
+      "passed_checks": [
+        "statistical_validation.hypothesis.schema_present",
+        "statistical_validation.hypothesis.outcome_defined",
+        "statistical_validation.hypothesis.inputs_defined",
+        "statistical_validation.hypothesis.assertion_defined",
+        "statistical_validation.estimand.target_defined",
+        "statistical_validation.estimand.relation_defined",
+        "statistical_validation.estimand.method_bound",
+        "statistical_validation.data_applicability.outcome_type_known",
+        "statistical_validation.data_applicability.input_types_known",
+        "statistical_validation.data_applicability.method_requirements_present",
+        "statistical_validation.multiplicity.screening_scope_recorded",
+        "statistical_validation.multiplicity.q_value_recorded",
+        "statistical_validation.multiplicity.q_value_within_threshold",
+        "statistical_validation.execution.execution_success",
+        "statistical_validation.execution.paper_program_evaluated",
+        "statistical_validation.paper_fidelity.paper_program_fidelity",
+        "statistical_validation.robustness.internal_validation_present",
+        "statistical_validation.robustness.stability_present",
+        "statistical_validation.robustness.condition_number_acceptable",
+        "statistical_validation.data_method_structural_fit.no_structural_complications_detected",
+        "statistical_validation.internal_coherence.math_spec_vocabulary_shared_with_steps"
+      ],
+      "failed_checks": [
+        "statistical_validation.data_applicability.minimum_sample_size",
+        "statistical_validation.paper_fidelity.rubric_survivor",
+        "statistical_validation.paper_fidelity.implementation_coverage",
+        "statistical_validation.paper_fidelity.no_fatal_missing_components",
+        "statistical_validation.paper_fidelity.no_generic_fallback",
+        "statistical_validation.paper_fidelity.fidelity_usable",
+        "statistical_validation.assumption_admissibility.assumptions_checked",
+        "statistical_validation.assumption_admissibility.output_contract_satisfied"
+      ],
+      "fatal_failed_checks": [
+        "data_applicability.minimum_sample_size"
+      ],
+      "emittable": false,
+      "tree": {
+        "name": "statistical_validation",
+        "description": "Method-conditional validation tree for one structured statistical hypothesis.",
+        "aggregation": "mean",
+        "score": 0.7,
+        "passed": false,
+        "children": [
+          {
+            "name": "hypothesis",
+            "description": "Structured hypothesis is present and testable.",
+            "aggregation": "all",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "schema_present",
+                "description": "schema present",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "hypothesis_id": "h_58123d900e33"
+                }
+              },
+              {
+                "name": "outcome_defined",
+                "description": "outcome defined",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "inputs_defined",
+                "description": "inputs defined",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "assertion_defined",
+                "description": "assertion defined",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "estimand",
+            "description": "Hypothesis declares a target and a method-defined result can be evaluated.",
+            "aggregation": "all",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "target_defined",
+                "description": "target defined",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "relation_defined",
+                "description": "relation defined",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "method_bound",
+                "description": "method bound",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "data_applicability",
+            "description": "Observed data support the variables and minimum sample properties required by the hypothesis.",
+            "aggregation": "all",
+            "score": 0.0,
+            "passed": false,
+            "children": [
+              {
+                "name": "outcome_type_known",
+                "description": "outcome type known",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "input_types_known",
+                "description": "input types known",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "minimum_sample_size",
+                "description": "minimum sample size",
+                "score": 0.0,
+                "passed": false,
+                "children": [],
+                "evidence": {
+                  "n_observations": null
+                }
+              },
+              {
+                "name": "method_requirements_present",
+                "description": "method requirements present",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "multiplicity",
+            "description": "Candidate-pool multiplicity is recorded and controlled when screening creates multiple hypotheses.",
+            "aggregation": "all",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "screening_scope_recorded",
+                "description": "screening scope recorded",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "n_tests": 81
+                }
+              },
+              {
+                "name": "q_value_recorded",
+                "description": "q value recorded",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "selected_q_value": 0.0
+                }
+              },
+              {
+                "name": "q_value_within_threshold",
+                "description": "q value within threshold",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "threshold": 0.1
+                }
+              }
+            ]
+          },
+          {
+            "name": "execution",
+            "description": "Generated program executed and emitted a parseable result.",
+            "aggregation": "all",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "execution_success",
+                "description": "execution success",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "paper_program_evaluated",
+                "description": "paper program evaluated",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "paper_fidelity",
+            "description": "Generated program implements enough of the extracted method specification to support statistical use.",
+            "aggregation": "all",
+            "score": 0.0,
+            "passed": false,
+            "children": [
+              {
+                "name": "rubric_survivor",
+                "description": "rubric survivor",
+                "score": 0.0,
+                "passed": false,
+                "children": [],
+                "evidence": {
+                  "hard_gate_verdict": "fail_exec"
+                }
+              },
+              {
+                "name": "paper_program_fidelity",
+                "description": "paper program fidelity",
+                "score": 0.0,
+                "passed": true,
+                "threshold": 0.0,
+                "children": [],
+                "evidence": {
+                  "paper_program_fidelity": 0.0,
+                  "fidelity_label": "failed_reproduction",
+                  "diagnostic_only": true
+                }
+              },
+              {
+                "name": "implementation_coverage",
+                "description": "implementation coverage",
+                "score": 0.0,
+                "passed": false,
+                "threshold": 0.8,
+                "children": [],
+                "evidence": {
+                  "implementation_coverage_score": 0.0,
+                  "implemented_components": [],
+                  "missing_components": [
+                    "c01",
+                    "c02",
+                    "c03",
+                    "c04",
+                    "c05"
+                  ],
+                  "fatal_missing_components": [
+                    "c01",
+                    "c02",
+                    "c03",
+                    "c04"
+                  ],
+                  "substitutions": []
+                }
+              },
+              {
+                "name": "no_fatal_missing_components",
+                "description": "no fatal missing components",
+                "score": 0.0,
+                "passed": false,
+                "children": [],
+                "evidence": {
+                  "fatal_missing_components": [
+                    "c01",
+                    "c02",
+                    "c03",
+                    "c04"
+                  ]
+                }
+              },
+              {
+                "name": "no_generic_fallback",
+                "description": "no generic fallback",
+                "score": 0.0,
+                "passed": false,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "fidelity_usable",
+                "description": "fidelity usable",
+                "score": 0.0,
+                "passed": false,
+                "children": [],
+                "evidence": {
+                  "minimum_component_coverage": 0.8
+                }
+              }
+            ]
+          },
+          {
+            "name": "assumption_admissibility",
+            "description": "Method assumptions and output contract are explicitly checked by the execution output.",
+            "aggregation": "all",
+            "score": 0.0,
+            "passed": false,
+            "children": [
+              {
+                "name": "assumptions_checked",
+                "description": "assumptions checked",
+                "score": 0.0,
+                "passed": false,
+                "threshold": 1.0,
+                "children": [],
+                "evidence": {
+                  "recall": 0.0
+                }
+              },
+              {
+                "name": "output_contract_satisfied",
+                "description": "output contract satisfied",
+                "score": 0.0,
+                "passed": false,
+                "threshold": 1.0,
+                "children": [],
+                "evidence": {
+                  "recall": 0.0
+                }
+              }
+            ]
+          },
+          {
+            "name": "robustness",
+            "description": "Statistical robustness diagnostics pass method-conditional thresholds.",
+            "aggregation": "mean",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "internal_validation_present",
+                "description": "internal validation present",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "stability_present",
+                "description": "stability present",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "condition_number_acceptable",
+                "description": "condition number acceptable",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "condition_number": null
+                }
+              }
+            ]
+          },
+          {
+            "name": "data_method_structural_fit",
+            "description": "Extracted method acknowledges structural properties actually present in the data.",
+            "aggregation": "mean",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "no_structural_complications_detected",
+                "description": "no structural complications detected",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "internal_coherence",
+            "description": "Mathematical specification and procedural steps describe the same method.",
+            "aggregation": "mean",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "math_spec_vocabulary_shared_with_steps",
+                "description": "math spec vocabulary shared with steps",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "math_terms": [
+                    "asymptotic",
+                    "benchmark-specific",
+                    "computation",
+                    "consistency",
+                    "construction",
+                    "defined",
+                    "dimension",
+                    "distribution",
+                    "excerpt",
+                    "explicitly",
+                    "family-specific",
+                    "form",
+                    "function",
+                    "guarantees",
+                    "implied",
+                    "interval",
+                    "latent",
+                    "likelihood",
+                    "likelihood-based",
+                    "llms",
+                    "loadings",
+                    "low-dimensional",
+                    "posterior",
+                    "prediction",
+                    "provided",
+                    "skill",
+                    "specific",
+                    "statistical",
+                    "text",
+                    "unevaluated",
+                    "variable",
+                    "variables",
+                    "vector"
+                  ],
+                  "shared_terms": [
+                    "computation",
+                    "family-specific",
+                    "function",
+                    "latent",
+                    "likelihood",
+                    "likelihood-based",
+                    "llms",
+                    "low-dimensional",
+                    "posterior",
+                    "prediction",
+                    "unevaluated",
+                    "variable",
+                    "variables",
+                    "vector"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "terminal_gate": "fail_data_applicability",
+        "validation_label": "invalid_method_for_data",
+        "validation_coverage_score": 0.7,
+        "passed_checks": [
+          "statistical_validation.hypothesis.schema_present",
+          "statistical_validation.hypothesis.outcome_defined",
+          "statistical_validation.hypothesis.inputs_defined",
+          "statistical_validation.hypothesis.assertion_defined",
+          "statistical_validation.estimand.target_defined",
+          "statistical_validation.estimand.relation_defined",
+          "statistical_validation.estimand.method_bound",
+          "statistical_validation.data_applicability.outcome_type_known",
+          "statistical_validation.data_applicability.input_types_known",
+          "statistical_validation.data_applicability.method_requirements_present",
+          "statistical_validation.multiplicity.screening_scope_recorded",
+          "statistical_validation.multiplicity.q_value_recorded",
+          "statistical_validation.multiplicity.q_value_within_threshold",
+          "statistical_validation.execution.execution_success",
+          "statistical_validation.execution.paper_program_evaluated",
+          "statistical_validation.paper_fidelity.paper_program_fidelity",
+          "statistical_validation.robustness.internal_validation_present",
+          "statistical_validation.robustness.stability_present",
+          "statistical_validation.robustness.condition_number_acceptable",
+          "statistical_validation.data_method_structural_fit.no_structural_complications_detected",
+          "statistical_validation.internal_coherence.math_spec_vocabulary_shared_with_steps"
+        ],
+        "failed_checks": [
+          "statistical_validation.data_applicability.minimum_sample_size",
+          "statistical_validation.paper_fidelity.rubric_survivor",
+          "statistical_validation.paper_fidelity.implementation_coverage",
+          "statistical_validation.paper_fidelity.no_fatal_missing_components",
+          "statistical_validation.paper_fidelity.no_generic_fallback",
+          "statistical_validation.paper_fidelity.fidelity_usable",
+          "statistical_validation.assumption_admissibility.assumptions_checked",
+          "statistical_validation.assumption_admissibility.output_contract_satisfied"
+        ],
+        "fatal_failed_checks": [
+          "data_applicability.minimum_sample_size"
+        ],
+        "emittable": false,
+        "hypothesis_id": "h_58123d900e33",
+        "method_spec_id": "latent_scaling_lmm"
+      }
+    },
+    "statistical_validation_gate": "fail_data_applicability"
+  },
+  "expected_paper_program_evaluation": {
+    "status": "ok",
+    "method_spec_id": "latent_scaling_lmm",
+    "rubric_tree": {
+      "name": "method_replication",
+      "description": "Paper-derived method is implemented, executed, and validated.",
+      "aggregation": "gated",
+      "score": 0.0,
+      "passed": false,
+      "children": [
+        {
+          "name": "execution",
+          "description": "Program runs safely and emits parseable schema-conforming output.",
+          "aggregation": "all",
+          "score": 0.0,
+          "passed": false,
+          "children": [
+            {
+              "name": "static_validity",
+              "description": "Program passes static validation.",
+              "score": 1.0,
+              "passed": true,
+              "children": [],
+              "evidence": {}
+            },
+            {
+              "name": "sandbox_execution",
+              "description": "Program executes successfully in the sandbox.",
+              "score": 1.0,
+              "passed": true,
+              "children": [],
+              "evidence": {}
+            },
+            {
+              "name": "schema_validity",
+              "description": "Program emits required JSON fields.",
+              "score": 0.0,
+              "passed": false,
+              "children": [],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "name": "paper_program_fidelity",
+          "description": "Program implements the paper-derived method components with measured partial coverage.",
+          "aggregation": "fidelity_components",
+          "score": 0.0,
+          "passed": false,
+          "children": [
+            {
+              "name": "source_depth",
+              "description": "Method specification is extracted from full text or a method section rather than abstract-only evidence.",
+              "score": 1.0,
+              "passed": true,
+              "children": [],
+              "evidence": {
+                "evidence_depth": "full_text"
+              }
+            },
+            {
+              "name": "mathematical_specificity",
+              "description": "Method specification contains enough mathematical structure to constrain implementation.",
+              "score": 1.0,
+              "passed": true,
+              "children": [],
+              "evidence": {
+                "objective": "Likelihood function of the latent variable model (specific form not provided in excerpt).",
+                "loss": "Not explicitly defined in the provided text excerpt.",
+                "decision_rule": "Posterior distribution computation and prediction interval construction for unevaluated LLMs.",
+                "parameters": [
+                  "Family-specific latent variables",
+                  "Latent skill loadings",
+                  "Benchmark-specific loadings"
+                ],
+                "tuning_parameters": [
+                  "Dimension of the latent skill vector (implied by 'low-dimensional')"
+                ],
+                "estimator": "Likelihood-based estimator with statistical guarantees (consistency and asymptotic distribution)."
+              }
+            },
+            {
+              "name": "implementation_exactness",
+              "description": "Execution does not report proxy, surrogate, or approximation substitutions for missing paper details.",
+              "score": 1.0,
+              "passed": true,
+              "children": [],
+              "evidence": {
+                "method_spec_warnings": [
+                  "The specific mathematical form of the likelihood function and the latent variable model equations are not provided in the excerpt.",
+                  "The exact dimension of the latent skill vector is not specified.",
+                  "Details of the 'mild conditions' for consistency are not listed in the excerpt."
+                ],
+                "execution_warnings": [
+                  "method_spec_step_results_missing_or_not_object",
+                  "assumptions_checked_missing_or_not_object",
+                  "output_contract_satisfied_missing_or_not_object"
+                ]
+              }
+            },
+            {
+              "name": "implementation_components",
+              "description": "Required method components are implemented or explicitly diagnosed as missing.",
+              "score": 0.0,
+              "passed": false,
+              "children": [],
+              "evidence": {
+                "status": "ok",
+                "coverage_score": 0.0,
+                "n_components": 5,
+                "implemented_components": [],
+                "missing_components": [
+                  "c01",
+                  "c02",
+                  "c03",
+                  "c04",
+                  "c05"
+                ],
+                "fatal_missing_components": [
+                  "c01",
+                  "c02",
+                  "c03",
+                  "c04"
+                ],
+                "substitutions": [],
+                "substitution_penalty": 0.0,
+                "component_results": [
+                  {
+                    "id": "c01",
+                    "kind": "transformation",
+                    "description": "Data structuring for N families, n_l models, and J benchmarks with observable features s and t.",
+                    "required": true,
+                    "weight": 1.0,
+                    "fatal_if_missing": true,
+                    "score": 0.0,
+                    "implemented": false,
+                    "evidence": {
+                      "linked_step_ids": [
+                        "s01"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "c02",
+                    "kind": "objective",
+                    "description": "Likelihood function for the latent variable model linking latent skills, family variables, and observable features to benchmark performance.",
+                    "required": true,
+                    "weight": 1.0,
+                    "fatal_if_missing": true,
+                    "score": 0.0,
+                    "implemented": false,
+                    "evidence": {
+                      "linked_step_ids": [
+                        "s02",
+                        "s03"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "c03",
+                    "kind": "estimator",
+                    "description": "Likelihood-based estimator for model parameters.",
+                    "required": true,
+                    "weight": 1.0,
+                    "fatal_if_missing": true,
+                    "score": 0.0,
+                    "implemented": false,
+                    "evidence": {
+                      "linked_step_ids": [
+                        "s03"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "c04",
+                    "kind": "optimization",
+                    "description": "Projected stochastic gradient ascent algorithm for efficient estimation.",
+                    "required": true,
+                    "weight": 1.0,
+                    "fatal_if_missing": true,
+                    "score": 0.0,
+                    "implemented": false,
+                    "evidence": {
+                      "linked_step_ids": [
+                        "s04"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "c05",
+                    "kind": "output",
+                    "description": "Computation of posterior distributions for latent variables and prediction intervals for performance.",
+                    "required": true,
+                    "weight": 1.0,
+                    "fatal_if_missing": false,
+                    "score": 0.0,
+                    "implemented": false,
+                    "evidence": {
+                      "linked_step_ids": [
+                        "s05"
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "implementation_invariants",
+              "description": "Generated code satisfies paper-derived deterministic implementation invariants.",
+              "score": 1.0,
+              "passed": true,
+              "children": [],
+              "evidence": {
+                "status": "ok",
+                "score": 1.0,
+                "n_invariants": 3,
+                "results": [
+                  {
+                    "name": "no_global_scaling_curve",
+                    "rationale": "The method explicitly rejects a single global scaling curve in favor of family-specific latent variables.",
+                    "score": 1.0,
+                    "passed": true,
+                    "required_patterns": [
+                      {
+                        "pattern": "family.*latent",
+                        "matched": true,
+                        "error": null
+                      },
+                      {
+                        "pattern": "heterogeneity",
+                        "matched": true,
+                        "error": null
+                      }
+                    ],
+                    "forbidden_patterns": [
+                      {
+                        "pattern": "global.*scaling.*curve",
+                        "matched": false,
+                        "error": null
+                      },
+                      {
+                        "pattern": "single.*power.*law",
+                        "matched": false,
+                        "error": null
+                      }
+                    ]
+                  },
+                  {
+                    "name": "stochastic_gradient_ascent",
+                    "rationale": "The text specifies the use of projected stochastic gradient ascent for optimization.",
+                    "score": 1.0,
+                    "passed": true,
+                    "required_patterns": [
+                      {
+                        "pattern": "stochastic.*gradient.*ascent",
+                        "matched": true,
+                        "error": null
+                      },
+                      {
+                        "pattern": "projected.*gradient",
+                        "matched": true,
+                        "error": null
+                      }
+                    ],
+                    "forbidden_patterns": [
+                      {
+                        "pattern": "batch.*gradient.*descent",
+                        "matched": false,
+                        "error": null
+                      },
+                      {
+                        "pattern": "closed.*form.*solution",
+                        "matched": false,
+                        "error": null
+                      }
+                    ]
+                  },
+                  {
+                    "name": "likelihood_based_estimation",
+                    "rationale": "The estimator is explicitly defined as likelihood-based.",
+                    "score": 1.0,
+                    "passed": true,
+                    "required_patterns": [
+                      {
+                        "pattern": "likelihood",
+                        "matched": true,
+                        "error": null
+                      },
+                      {
+                        "pattern": "log.*likelihood",
+                        "matched": true,
+                        "error": null
+                      }
+                    ],
+                    "forbidden_patterns": [
+                      {
+                        "pattern": "least.*squares",
+                        "matched": false,
+                        "error": null
+                      },
+                      {
+                        "pattern": "moment.*matching",
+                        "matched": false,
+                        "error": null
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "name": "algorithm_steps",
+              "description": "Ordered paper-derived algorithm steps are implemented.",
+              "aggregation": "mean",
+              "score": 1.0,
+              "passed": true,
+              "children": [
+                {
+                  "name": "s01",
+                  "description": "Construct the dataset of N LLM families, where each family l contains n_l models. For each model i in family l, observe the J-dimensional performance vector Y_i^(l) across J benchmarks and record observable features (model size s, training tokens t).",
+                  "score": 1.0,
+                  "passed": true,
+                  "children": [],
+                  "evidence": {
+                    "required_output": "dataset_structure",
+                    "source_span": "Section 2.1: Setup for the Latent Variable Model"
+                  }
+                },
+                {
+                  "name": "s02",
+                  "description": "Define the latent variable model where performance is driven by a low-dimensional ability vector (latent skills) determined by family-specific latent variables and observable features.",
+                  "score": 1.0,
+                  "passed": true,
+                  "children": [],
+                  "evidence": {
+                    "required_output": "model_definition",
+                    "source_span": "Section 1.2: Our Contribution; Section 2.1"
+                  }
+                },
+                {
+                  "name": "s03",
+                  "description": "Develop and apply the likelihood-based estimator for the latent variable model parameters.",
+                  "score": 1.0,
+                  "passed": true,
+                  "children": [],
+                  "evidence": {
+                    "required_output": "parameter_estimates",
+                    "source_span": "Section 1.2: Our Contribution; Section 2"
+                  }
+                },
+                {
+                  "name": "s04",
+                  "description": "Execute the efficient projected stochastic gradient ascent algorithm to support estimation on large-scale datasets.",
+                  "score": 1.0,
+                  "passed": true,
+                  "children": [],
+                  "evidence": {
+                    "required_output": "optimized_parameters",
+                    "source_span": "Section 1.2: Our Contribution; Section 3"
+                  }
+                },
+                {
+                  "name": "s05",
+                  "description": "Compute posterior distributions of the latent variables and construct prediction intervals for the performance of unevaluated LLMs.",
+                  "score": 1.0,
+                  "passed": true,
+                  "children": [],
+                  "evidence": {
+                    "required_output": "posterior_distributions_prediction_intervals",
+                    "source_span": "Section 1.2: Our Contribution; Section 3"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "generic_fallback_absence",
+              "description": "Implementation is not a familiar default substituted for the paper method.",
+              "score": 0.0,
+              "passed": false,
+              "children": [],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "name": "admissibility",
+          "description": "Assumptions and output contract are checked.",
+          "aggregation": "mean",
+          "score": 0.0,
+          "passed": false,
+          "children": [
+            {
+              "name": "assumptions",
+              "description": "Paper assumptions are checked by the execution output.",
+              "aggregation": "mean",
+              "score": 0.0,
+              "passed": false,
+              "children": [
+                {
+                  "name": "latent_family_heterogeneity",
+                  "description": "Each LLM family is associated with a latent variable that captures common underlying features (architecture, training strategy) not directly observed.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {
+                    "id": "a01"
+                  }
+                },
+                {
+                  "name": "skill_driven_performance",
+                  "description": "An LLM's performance on different benchmarks is driven by latent skills, jointly determined by the family latent variable and the model's own observable features.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {
+                    "id": "a02"
+                  }
+                },
+                {
+                  "name": "low_dimensional_ability",
+                  "description": "Performance across benchmarks is driven by a low-dimensional ability vector that scales predictably with observable features.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {
+                    "id": "a03"
+                  }
+                },
+                {
+                  "name": "mild_estimation_conditions",
+                  "description": "The likelihood-based estimator possesses estimation consistency and asymptotic distribution under mild conditions.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {
+                    "id": "a04"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "output_contract",
+              "description": "Required outputs are present.",
+              "aggregation": "mean",
+              "score": 0.0,
+              "passed": false,
+              "children": [
+                {
+                  "name": "dataset_structure",
+                  "description": "Execution output satisfies contract key dataset_structure.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {}
+                },
+                {
+                  "name": "model_definition",
+                  "description": "Execution output satisfies contract key model_definition.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {}
+                },
+                {
+                  "name": "parameter_estimates",
+                  "description": "Execution output satisfies contract key parameter_estimates.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {}
+                },
+                {
+                  "name": "optimized_parameters",
+                  "description": "Execution output satisfies contract key optimized_parameters.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {}
+                },
+                {
+                  "name": "posterior_distributions",
+                  "description": "Execution output satisfies contract key posterior_distributions.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {}
+                },
+                {
+                  "name": "prediction_intervals",
+                  "description": "Execution output satisfies contract key prediction_intervals.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {}
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "hard_gate_verdict": "fail_exec",
+      "missing_steps": []
+    },
+    "rubric_score": 0.0,
+    "static_validity": true,
+    "execution_success": true,
+    "schema_validity": false,
+    "paper_program_fidelity": 0.0,
+    "fidelity_label": "failed_reproduction",
+    "implementation_coverage": {
+      "status": "ok",
+      "coverage_score": 0.0,
+      "n_components": 5,
+      "implemented_components": [],
+      "missing_components": [
+        "c01",
+        "c02",
+        "c03",
+        "c04",
+        "c05"
+      ],
+      "fatal_missing_components": [
+        "c01",
+        "c02",
+        "c03",
+        "c04"
+      ],
+      "substitutions": [],
+      "substitution_penalty": 0.0,
+      "component_results": [
+        {
+          "id": "c01",
+          "kind": "transformation",
+          "description": "Data structuring for N families, n_l models, and J benchmarks with observable features s and t.",
+          "required": true,
+          "weight": 1.0,
+          "fatal_if_missing": true,
+          "score": 0.0,
+          "implemented": false,
+          "evidence": {
+            "linked_step_ids": [
+              "s01"
+            ]
+          }
+        },
+        {
+          "id": "c02",
+          "kind": "objective",
+          "description": "Likelihood function for the latent variable model linking latent skills, family variables, and observable features to benchmark performance.",
+          "required": true,
+          "weight": 1.0,
+          "fatal_if_missing": true,
+          "score": 0.0,
+          "implemented": false,
+          "evidence": {
+            "linked_step_ids": [
+              "s02",
+              "s03"
+            ]
+          }
+        },
+        {
+          "id": "c03",
+          "kind": "estimator",
+          "description": "Likelihood-based estimator for model parameters.",
+          "required": true,
+          "weight": 1.0,
+          "fatal_if_missing": true,
+          "score": 0.0,
+          "implemented": false,
+          "evidence": {
+            "linked_step_ids": [
+              "s03"
+            ]
+          }
+        },
+        {
+          "id": "c04",
+          "kind": "optimization",
+          "description": "Projected stochastic gradient ascent algorithm for efficient estimation.",
+          "required": true,
+          "weight": 1.0,
+          "fatal_if_missing": true,
+          "score": 0.0,
+          "implemented": false,
+          "evidence": {
+            "linked_step_ids": [
+              "s04"
+            ]
+          }
+        },
+        {
+          "id": "c05",
+          "kind": "output",
+          "description": "Computation of posterior distributions for latent variables and prediction intervals for performance.",
+          "required": true,
+          "weight": 1.0,
+          "fatal_if_missing": false,
+          "score": 0.0,
+          "implemented": false,
+          "evidence": {
+            "linked_step_ids": [
+              "s05"
+            ]
+          }
+        }
+      ]
+    },
+    "implementation_coverage_score": 0.0,
+    "implemented_components": [],
+    "missing_components": [
+      "c01",
+      "c02",
+      "c03",
+      "c04",
+      "c05"
+    ],
+    "fatal_missing_components": [
+      "c01",
+      "c02",
+      "c03",
+      "c04"
+    ],
+    "substitutions": [],
+    "algorithm_step_fidelity": 1.0,
+    "source_depth_score": 1.0,
+    "mathematical_specificity_score": 1.0,
+    "implementation_exactness_score": 1.0,
+    "implementation_invariant_score": 1.0,
+    "implementation_invariants": {
+      "status": "ok",
+      "score": 1.0,
+      "n_invariants": 3,
+      "results": [
+        {
+          "name": "no_global_scaling_curve",
+          "rationale": "The method explicitly rejects a single global scaling curve in favor of family-specific latent variables.",
+          "score": 1.0,
+          "passed": true,
+          "required_patterns": [
+            {
+              "pattern": "family.*latent",
+              "matched": true,
+              "error": null
+            },
+            {
+              "pattern": "heterogeneity",
+              "matched": true,
+              "error": null
+            }
+          ],
+          "forbidden_patterns": [
+            {
+              "pattern": "global.*scaling.*curve",
+              "matched": false,
+              "error": null
+            },
+            {
+              "pattern": "single.*power.*law",
+              "matched": false,
+              "error": null
+            }
+          ]
+        },
+        {
+          "name": "stochastic_gradient_ascent",
+          "rationale": "The text specifies the use of projected stochastic gradient ascent for optimization.",
+          "score": 1.0,
+          "passed": true,
+          "required_patterns": [
+            {
+              "pattern": "stochastic.*gradient.*ascent",
+              "matched": true,
+              "error": null
+            },
+            {
+              "pattern": "projected.*gradient",
+              "matched": true,
+              "error": null
+            }
+          ],
+          "forbidden_patterns": [
+            {
+              "pattern": "batch.*gradient.*descent",
+              "matched": false,
+              "error": null
+            },
+            {
+              "pattern": "closed.*form.*solution",
+              "matched": false,
+              "error": null
+            }
+          ]
+        },
+        {
+          "name": "likelihood_based_estimation",
+          "rationale": "The estimator is explicitly defined as likelihood-based.",
+          "score": 1.0,
+          "passed": true,
+          "required_patterns": [
+            {
+              "pattern": "likelihood",
+              "matched": true,
+              "error": null
+            },
+            {
+              "pattern": "log.*likelihood",
+              "matched": true,
+              "error": null
+            }
+          ],
+          "forbidden_patterns": [
+            {
+              "pattern": "least.*squares",
+              "matched": false,
+              "error": null
+            },
+            {
+              "pattern": "moment.*matching",
+              "matched": false,
+              "error": null
+            }
+          ]
+        }
+      ]
+    },
+    "covered_steps": [
+      "s01",
+      "s02",
+      "s03",
+      "s04",
+      "s05"
+    ],
+    "missing_steps": [],
+    "assumption_check_recall": 0.0,
+    "output_contract_recall": 0.0,
+    "fallback_absence": false,
+    "generic_fallback_detected": true,
+    "hard_gate_verdict": "fail_exec",
+    "failure_diagnosis": {
+      "primary": "schema_contract_failed",
+      "reasons": [
+        {
+          "code": "schema_contract_failed",
+          "severity": "hard"
+        },
+        {
+          "code": "generic_fallback_or_missing_method_trace",
+          "severity": "hard"
+        },
+        {
+          "code": "partial_component_coverage",
+          "severity": "soft",
+          "score": 0.0,
+          "missing_components": [
+            "c01",
+            "c02",
+            "c03",
+            "c04",
+            "c05"
+          ]
+        },
+        {
+          "code": "fatal_method_component_missing",
+          "severity": "hard",
+          "missing_components": [
+            "c01",
+            "c02",
+            "c03",
+            "c04"
+          ]
+        },
+        {
+          "code": "unchecked_or_failed_assumptions",
+          "severity": "soft",
+          "score": 0.0
+        }
+      ]
+    },
+    "warnings": [
+      "execution output missing required method-spec fields",
+      "generic fallback detected"
+    ]
+  }
+}

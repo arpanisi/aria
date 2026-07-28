@@ -1,0 +1,64 @@
+{
+  "method_spec_id": "bootstrap_stability_screening_v1",
+  "method_name": "bootstrap_stability_screening",
+  "task_type": "regression",
+  "source": {
+    "kind": "example_method_spec",
+    "note": "Minimal paper-derived-method fixture for coding-agent smoke tests."
+  },
+  "algorithm_steps": [
+    {
+      "id": "s01",
+      "description": "Construct complete-case matrix for the selected outcome and predictors.",
+      "required_output": "complete_case_summary"
+    },
+    {
+      "id": "s02",
+      "description": "Run bootstrap resampling of the complete-case data.",
+      "required_output": "bootstrap_summary"
+    },
+    {
+      "id": "s03",
+      "description": "Fit the specified interpretable model inside each bootstrap sample.",
+      "required_output": "bootstrap_model_fits"
+    },
+    {
+      "id": "s04",
+      "description": "Report coefficient sign stability across bootstrap samples.",
+      "required_output": "bootstrap_sign_stability"
+    },
+    {
+      "id": "s05",
+      "description": "Report held-out or cross-validated fit for the final model.",
+      "required_output": "cross_validated_fit"
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "a01",
+      "name": "sufficient_complete_cases",
+      "description": "The complete-case sample size must be large enough for resampling."
+    },
+    {
+      "id": "a02",
+      "name": "non_constant_variables",
+      "description": "Outcome and predictors must have non-zero variance."
+    }
+  ],
+  "data_requirements": [
+    "tabular dataset",
+    "numeric outcome",
+    "at least one numeric predictor",
+    "complete-case subset after coercion"
+  ],
+  "output_contract": [
+    "complete_case_summary",
+    "bootstrap_summary",
+    "bootstrap_sign_stability",
+    "cross_validated_fit",
+    "fit_metrics",
+    "diagnostics",
+    "robustness",
+    "warnings"
+  ]
+}

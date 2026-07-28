@@ -1,0 +1,551 @@
+<title>ARIA: The Pipeline as a Directed Computation Graph</title>
+<style>
+  :root {
+    --ground: #F6F7F9; --ground-alt: #EDEFF3; --panel: #FFFFFF; --border: #DCE1E8;
+    --ink: #1A2129; --ink-muted: #5B6673; --ink-faint: #8B96A3;
+    --accent: #0E7C86; --accent-ink: #075158; --accent-soft: #E3F1F1;
+    --pass: #3F8F5F; --pass-soft: #E7F3EB;
+    --fail: #B8503E; --fail-soft: #FBEAE6;
+    --partial: #A9822C; --partial-soft: #FAF2E0;
+    --policy: #7B4FB8; --policy-soft: #EFE7F7;
+    --shadow: 0 1px 2px rgba(20,26,33,0.06), 0 6px 18px rgba(20,26,33,0.06);
+    --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    --font-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", "Liberation Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #10141B; --ground-alt: #151A22; --panel: #171D26; --border: #262E39;
+      --ink: #E8ECF2; --ink-muted: #93A0AF; --ink-faint: #647186;
+      --accent: #55D8E0; --accent-ink: #BFF3F6; --accent-soft: #16333A;
+      --pass: #74D19A; --pass-soft: #17281F; --fail: #E6947C; --fail-soft: #2C1D19;
+      --partial: #DEBD65; --partial-soft: #2B2416;
+      --policy: #B79CE0; --policy-soft: #241B33;
+      --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 10px 26px rgba(0,0,0,0.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #10141B; --ground-alt: #151A22; --panel: #171D26; --border: #262E39;
+    --ink: #E8ECF2; --ink-muted: #93A0AF; --ink-faint: #647186;
+    --accent: #55D8E0; --accent-ink: #BFF3F6; --accent-soft: #16333A;
+    --pass: #74D19A; --pass-soft: #17281F; --fail: #E6947C; --fail-soft: #2C1D19;
+    --partial: #DEBD65; --partial-soft: #2B2416;
+    --policy: #B79CE0; --policy-soft: #241B33;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 10px 26px rgba(0,0,0,0.3);
+  }
+  :root[data-theme="light"] {
+    --ground: #F6F7F9; --ground-alt: #EDEFF3; --panel: #FFFFFF; --border: #DCE1E8;
+    --ink: #1A2129; --ink-muted: #5B6673; --ink-faint: #8B96A3;
+    --accent: #0E7C86; --accent-ink: #075158; --accent-soft: #E3F1F1;
+    --pass: #3F8F5F; --pass-soft: #E7F3EB; --fail: #B8503E; --fail-soft: #FBEAE6;
+    --partial: #A9822C; --partial-soft: #FAF2E0;
+    --policy: #7B4FB8; --policy-soft: #EFE7F7;
+    --shadow: 0 1px 2px rgba(20,26,33,0.06), 0 6px 18px rgba(20,26,33,0.06);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+  }
+
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+    display: flex; align-items: center; gap: 1rem;
+    padding: 0.85rem 1.25rem;
+    background: color-mix(in srgb, var(--panel) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar h1 {
+    font-family: var(--font-display); font-weight: 500; font-size: 1.05rem; margin: 0;
+    white-space: nowrap;
+  }
+  .topbar .dek { font-size: 0.78rem; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .controls { margin-left: auto; display: flex; gap: 0.4rem; align-items: center; flex: none; }
+  .ctrl-btn {
+    font-family: var(--font-mono); font-size: 0.78rem;
+    width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; border: 1px solid var(--border); background: var(--ground-alt); color: var(--ink);
+    cursor: pointer;
+  }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent-ink); }
+  .ctrl-btn.wide { width: auto; padding: 0 0.65rem; }
+  .zoom-readout { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-faint); width: 3.4rem; text-align: center; }
+
+  .stage { position: fixed; top: 60px; left: 0; right: 0; bottom: 0; overflow: hidden; cursor: grab; }
+  .stage.grabbing { cursor: grabbing; }
+  #world {
+    position: absolute; top: 0; left: 0;
+    transform-origin: 0 0;
+    width: 2500px; height: 1180px;
+  }
+  svg#edges { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  svg#edges path.edge {
+    fill: none; stroke: var(--ink-faint); stroke-width: 2; opacity: 0.55;
+    marker-end: url(#arrow);
+  }
+  svg#edges path.edge.feedback {
+    stroke: var(--accent); stroke-width: 2.2; stroke-dasharray: 6 4; opacity: 0.85;
+    marker-end: url(#arrow-accent);
+  }
+  svg#edges text.edge-label {
+    font-family: var(--font-mono); font-size: 10.5px; fill: var(--ink-faint);
+  }
+
+  .node-card {
+    position: absolute;
+    width: 202px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--panel);
+    box-shadow: var(--shadow);
+    padding: 0.7rem 0.8rem 0.65rem;
+    cursor: pointer;
+    transition: border-color 0.12s ease, transform 0.12s ease;
+    z-index: 2;
+  }
+  .node-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .node-card .idx {
+    font-family: var(--font-mono); font-size: 0.65rem; color: var(--ink-faint);
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;
+  }
+  .node-card .kind-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .node-card .title { font-size: 0.86rem; font-weight: 600; line-height: 1.25; margin-bottom: 0.3rem; }
+  .node-card .summary { font-size: 0.71rem; color: var(--ink-muted); line-height: 1.35; }
+  .node-card .ref { font-family: var(--font-mono); font-size: 0.63rem; color: var(--ink-faint); margin-top: 0.4rem; }
+  .node-card.policy { border-color: var(--policy); background: var(--policy-soft); }
+  .node-card.reward { border-color: var(--accent); box-shadow: 0 0 0 5px var(--accent-soft), var(--shadow); }
+  .node-card.reward .title { color: var(--accent-ink); }
+
+  .cluster-label {
+    position: absolute;
+    font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--ink-faint); z-index: 1;
+  }
+
+  /* ---------- detail drawer ---------- */
+  .drawer {
+    position: fixed; top: 60px; right: 0; bottom: 0; width: 420px;
+    background: var(--panel); border-left: 1px solid var(--border);
+    box-shadow: -12px 0 28px rgba(0,0,0,0.08);
+    transform: translateX(100%); transition: transform 0.22s ease;
+    z-index: 40; overflow-y: auto; padding: 1.4rem 1.4rem 3rem;
+  }
+  .drawer.open { transform: translateX(0); }
+  .drawer .close-btn {
+    position: absolute; top: 1rem; right: 1rem;
+    width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border);
+    background: var(--ground-alt); color: var(--ink-muted); cursor: pointer; font-size: 0.9rem;
+  }
+  .drawer .d-kind {
+    font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--accent); margin-bottom: 0.3rem;
+  }
+  .drawer h2 { font-family: var(--font-display); font-weight: 500; font-size: 1.3rem; margin: 0 0 0.6rem; padding-right: 2rem; }
+  .drawer .d-ref {
+    font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-muted);
+    background: var(--ground-alt); border-radius: 6px; padding: 0.4rem 0.6rem; margin-bottom: 1rem; display: inline-block;
+  }
+  .drawer .d-what { font-size: 0.88rem; color: var(--ink); margin-bottom: 1rem; line-height: 1.55; }
+  .drawer .d-calc-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); margin-bottom: 0.4rem; }
+  .drawer .d-calc {
+    font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;
+    background: var(--ground-alt); border-radius: 8px; padding: 0.85rem 0.95rem; margin-bottom: 1rem;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .drawer .d-calc.schema { border-left: 3px solid var(--partial); background: var(--partial-soft); }
+  .drawer .d-calc.metrics { border-left: 3px solid var(--accent); background: var(--accent-soft); }
+  .node-card .schema-flag {
+    position: absolute; top: 0.55rem; right: 0.7rem;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--partial);
+  }
+  .node-card .schema-flag.thin {
+    background: transparent; border: 1.4px solid var(--partial);
+  }
+  .node-card .metrics-flag {
+    position: absolute; top: 0.55rem; right: 1.35rem;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  }
+  .drawer .d-note {
+    font-size: 0.8rem; color: var(--ink-muted); border-left: 2px solid var(--accent);
+    padding-left: 0.7rem; margin-bottom: 1rem; line-height: 1.5;
+  }
+  .drawer .d-note.warn { border-left-color: var(--fail); color: var(--ink); }
+  .drawer .d-nav { display: flex; justify-content: space-between; margin-top: 1.4rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+  .drawer .d-nav button {
+    font-family: var(--font-mono); font-size: 0.74rem; background: none; border: 1px solid var(--border);
+    border-radius: 7px; padding: 0.4rem 0.65rem; color: var(--ink-muted); cursor: pointer;
+  }
+  .drawer .d-nav button:hover { border-color: var(--accent); color: var(--accent-ink); }
+
+  .legend-box {
+    position: fixed; left: 1.25rem; bottom: 1.25rem; z-index: 25;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.7rem 0.9rem; box-shadow: var(--shadow);
+    font-size: 0.74rem; color: var(--ink-muted); display: flex; flex-direction: column; gap: 0.32rem;
+  }
+  .legend-box .item { display: flex; align-items: center; gap: 0.45rem; }
+  .legend-box .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .legend-box .line { width: 16px; height: 2px; flex: none; }
+
+  .hint {
+    position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 25;
+    font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-faint);
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.55rem 0.8rem; box-shadow: var(--shadow);
+  }
+</style>
+
+<div class="topbar">
+  <h1>ARIA &middot; Pipeline as a Directed Computation Graph</h1>
+  <span class="dek">Every node performs a real, code-grounded calculation &mdash; click any node for the exact formula and source.</span>
+  <div class="controls">
+    <button class="ctrl-btn" id="zoom-out">&minus;</button>
+    <span class="zoom-readout" id="zoom-readout">100%</span>
+    <button class="ctrl-btn" id="zoom-in">+</button>
+    <button class="ctrl-btn wide" id="zoom-fit">Fit</button>
+  </div>
+</div>
+
+<div class="stage" id="stage">
+  <div id="world">
+    <svg id="edges">
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 z" fill="var(--ink-faint)"/>
+        </marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 z" fill="var(--accent)"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+</div>
+
+<div class="legend-box">
+  <div class="item"><span class="dot" style="background:var(--policy)"></span>policy-optimized node (only trainable action)</div>
+  <div class="item"><span class="dot" style="background:var(--ink-faint)"></span>environment computation node</div>
+  <div class="item"><span class="dot" style="background:var(--accent)"></span>terminal reward R(&tau;)</div>
+  <div class="item"><span class="dot" style="background:var(--partial)"></span>has a dedicated structural JSON/schema validator</div>
+  <div class="item"><span class="dot" style="background:transparent;border:1.4px solid var(--partial)"></span>only a bare try/except around parsing, not a real validator</div>
+  <div class="item"><span class="dot" style="background:var(--accent)"></span>computes real evaluation metrics (see drawer)</div>
+  <div class="item"><span class="line" style="background:var(--accent);border-top:2px dashed var(--accent)"></span>GRPO feedback edge</div>
+</div>
+<div class="hint">scroll / pinch to zoom &middot; drag to pan &middot; click a node to inspect</div>
+
+<div class="drawer" id="drawer">
+  <button class="close-btn" id="drawer-close">&times;</button>
+  <div id="drawer-content"></div>
+</div>
+
+<script>
+// ============================================================
+// Node data, grounded directly in the ARIA codebase.
+// Coordinates are in a 2500x1180 virtual canvas.
+// ============================================================
+const NODES = [
+  { id: "policy", idx: 1, kind: "policy", x: 40,  y: 470, title: "Query Policy &pi;<sub>&theta;</sub>",
+    file: "serve_policy.py / grpo_query_policy.py",
+    what: "Generates the next literature-search query as a token sequence, conditioned on the trajectory state (dataset profile, active candidate, prior evidence). This is the only node in the whole graph whose output is a trainable policy action.",
+    calc: "q ~ model.generate(do_sample=True, temperature=&tau;<sub>q</sub>)\nreasoning suppressed by default:\n  enable_reasoning=False pre-closes '</think>'\n  before generation starts",
+    metrics: "no evaluative metric is computed here - the query text itself is the artifact; nothing scores it until R(&tau;),\n  many steps later. token_usage is tracked only for cost\n  telemetry, not evaluation.",
+    schema: "query_policy.py &middot _extract_json_object + status check\nparse: first balanced {...} in raw text\n  (tolerant of prose around it, not a\n  strict whole-string json.loads)\nrequired: query (non-empty after strip)\noptional: reasoning, constraints[], exclusions[]\nmissing/empty query &rarr; status='format_invalid'",
+    note: "Every other node below is an environment transition induced by q, not an independent policy action. Only q's token log-probabilities are ever differentiated." },
+
+  { id: "retrieval", idx: 2, kind: "env", x: 330, y: 470, title: "Retrieval",
+    file: "literature_tools.py &middot retrieve_local_literature",
+    what: "Searches a local, category-filtered arXiv snapshot for papers matching the generated query, then filters and diversifies the hit list.",
+    calc: "per intent: bm25(arxiv_docs) via SQLite FTS5\nmulti-intent fusion (RRF-60):\n  contribution = 1 / (60 + rank)\n  summed per paper across intents\nthen: method-gate eligibility filter\n  (link_method_terms &rarr; eligible_for_method_guidance)\nthen: select_diverse_literature_slate(top_k)",
+    metrics: "score: BM25 relevance rank for one query intent\n  (query-term match strength, higher = better)\nintent_rrf_score: reciprocal-rank-fusion score summed\n  across intents - rewards a paper ranked well under\n  multiple phrasings of the same need\nbest_intent_rank: the single best rank achieved by any intent\ncategory_entropy: Shannon entropy (base 2) of the arXiv\n  category distribution across the selected slate -\n  how topically diverse the retrieved papers are\ndistinct_category_count: number of distinct categories\n  represented in the slate",
+    note: "Not FAISS or dense embeddings, despite what the paper's current retrieval-agent figure caption says. This is lexical BM25 + reciprocal rank fusion + a structural method-gate filter. Flagging this as a real discrepancy to fix in the write-up.", warn: true },
+
+  { id: "pdf", idx: 3, kind: "env", x: 620, y: 470, title: "PDF Fetch + Extract",
+    file: "literature_tools.py &middot fetch_arxiv_pdf, extract_pdf_text",
+    what: "Downloads (or reuses a cached copy of) each selected paper's PDF and extracts its text.",
+    calc: "extract up to 24 pages / 60,000 chars\nevidence_depth &larr; \n  'full_text'   if extraction succeeds\n  'pdf_cached'  if extraction fails\n  'abstract'    if fetch is disabled/fails",
+    metrics: "evidence_depth: categorical signal for how much of the\n  source paper was actually readable -\n  full_text > pdf_cached > abstract.\n  Feeds source_depth directly in the Evaluator downstream.",
+    note: "1559 of 1560 papers summarized in the completed run reached full_text depth; PDF ingestion is not the bottleneck anywhere in this pipeline." },
+
+  { id: "summarizer", idx: 4, kind: "env", x: 910, y: 470, title: "Paper Summarizer",
+    file: "method_spec_tools.py &middot summarize_method_spec_openrouter",
+    what: "An LLM reads the extracted paper text and produces a structured method_spec: algorithm_steps, assumptions, mathematical_specification, implementation_components, output_contract, and a free-text task_type.",
+    calc: "method_spec &larr; LLM(paper_text, schema)\ncached by (paper_id, evidence_depth)\n  so a later full_text pass can supersede\n  an earlier abstract-only extraction",
+    metrics: "no metric is computed at this node itself - this is pure\n  extraction. The quality of what it extracts (source_depth,\n  mathematical_specificity, Loading&hellip;) is only scored two steps\n  later, by the Evaluator, against the executed program.",
+    schema: "method_spec_tools.py &middot validate_method_spec\nrequired top-level keys (7): method_spec_id,\n  method_name, task_type, algorithm_steps,\n  assumptions, data_requirements, output_contract\nrejects method_name=='generic_paper_method'\ntask_type must be non-empty\nalgorithm_steps: list, &ge;2 items, each needs\n  {id, description, required_output}\nassumptions: each item needs\n  {id, name, description}\ndata_requirements, output_contract:\n  non-empty lists\nif present, also schema-checked:\n  implementation_invariants: each needs\n    {name, rationale, must_match, must_not_match}\n  implementation_components: each needs\n    {id, kind, description, required,\n     weight, fatal_if_missing}",
+    note: "task_type is never coerced into a fixed enum here - this is the mechanism behind the paper's central AutoML-contrast claim." },
+
+  { id: "screen", idx: 5, kind: "env", x: 1200, y: 200, title: "Candidate Screening",
+    file: "data_tools.py &middot discover_candidate_relationships",
+    what: "Screens every numeric predictor against every eligible outcome column in the dataset for a non-trivial pairwise association, independent of the retrieved method.",
+    calc: "for each (predictor, outcome) pair:\n  score, p = |Pearson r|, p-value   (_abs_corr)\nBenjamini-Hochberg FDR over all n_tests\nretain q &le; 0.10\nsort by (q_value, -score), cap at 20",
+    metrics: "screen_score: |Pearson r| - strength of the raw pairwise\n  association between one predictor and one outcome\nscreen_p_value: uncorrected significance of that association\nscreen_q_value: Benjamini-Hochberg FDR-corrected significance,\n  adjusted across all n_tests pairwise screens at once\nn_tests: total pairwise screens the correction was applied\n  across (64 in the featured example rollout)",
+    note: "n_tests in the featured example run was 64 pairwise screens, one BH correction across all of them." },
+
+  { id: "select", idx: 6, kind: "env", x: 1200, y: 470, title: "Candidate / Method Select",
+    file: "data_tools.py &middot select_candidate, select_analysis_method\n+ hypothesis_tools.py &middot build_structured_hypothesis",
+    what: "Binds the top-ranked screened candidate (by q-value, then score) to the extracted method_spec, then deterministically constructs the structured hypothesis object in the same step, before any code is written.",
+    calc: "candidate &larr; eligible[0]\nselected_q_value &larr; candidate.screen_q_value\nhypothesis &larr; build_structured_hypothesis(\n  candidate, method_spec, dataset_profile)",
+    metrics: "no new metric is computed here - selected_q_value is carried\n  forward from screening, and the hypothesis object built in\n  this same step is a schema, not a scored quantity.",
+    schema: "hypothesis_tools.py &middot build_structured_hypothesis\nnot LLM-generated - deterministically assembled\nreturns None if candidate or method_spec missing,\n  or if outcome/predictors end up empty\nfixed fields: unit_of_analysis,\n  outcome{variables,type}, inputs[],\n  relation{family,operator,formula,parameters},\n  assertion{target,type,null,alternative},\n  conditions{...}, candidate{...}, method{...},\n  validation_requirements[]\nhypothesis_id &larr; sha1(payload)[:12]\nNone here is exactly what the validation tree's\n  hypothesis.schema_present check looks for",
+    note: "" },
+
+  { id: "codegen", idx: 7, kind: "env", x: 1490, y: 530, title: "Code Generation",
+    file: "code_agent.py &middot generate_analysis_code",
+    what: "An LLM writes an executable Python program implementing the bound method_spec against the actual dataset.",
+    calc: "program &larr; LLM(method_spec, data_profile)\nif static validation fails:\n  one repair pass\n  (_repair_static_validation_once,\n   bounded by a wall-clock timeout)",
+    metrics: "no metric is computed here - the output is source code,\n  not a scored quantity. Its quality is only measured after\n  it actually runs, by the Evaluator and Validator downstream.",
+    schema: "code_agent.py &middot validate_analysis_code (AST-based)\npass 1 - forbidden substring scan:\n  __import__, eval(, exec(, compile(,\n  subprocess, requests, socket, urllib,\n  http, os., shutil, pickle\npass 2 - ast.parse + walk Import/ImportFrom,\n  root module checked against an allowlist:\n  json, math, pathlib, sys, warnings,\n  numpy, pandas, scipy, sklearn,\n  statsmodels, linearmodels, networkx\nanything outside this list fails static\n  validation before it is ever executed",
+    note: "" },
+
+  { id: "exec", idx: 8, kind: "env", x: 1780, y: 470, title: "Sandboxed Execution",
+    file: "code_agent.py &middot execute_analysis_code",
+    what: "Runs the generated program as a subprocess in a network-restricted sandbox and captures its structured JSON output.",
+    calc: "subprocess.run(cmd, timeout=60s,\n  network sandbox, restricted env)\ncaptures stdout / stderr / exit code\nor a timeout status",
+    metrics: "this is where the analysis's own scientific metrics are\n  computed, not meta-scores about the analysis:\nfit_metrics: whatever the fitted model reports\n  (coefficients, R&sup2;, etc. - method-specific)\nrobustness.cv_r2_mean / cv_score_mean: cross-validated fit\n  quality (regression / classification respectively)\nrobustness stability metric: how often a coefficient's sign\n  agrees across bootstrap resamples\ndiagnostics.condition_number: numerical conditioning of the fit\nassumptions_checked / output_contract_satisfied: per-item\n  pass/fail, self-reported by the executed program itself",
+    schema: "paper_program_eval.py &middot required_execution_keys_present\nbase required keys (7): status, method,\n  n_observations, fit_metrics, diagnostics,\n  robustness, warnings\nif a method_spec is bound (nearly always),\n  4 more become required: method_spec_id,\n  method_spec_step_results, assumptions_checked,\n  output_contract_satisfied\nthis is exactly where 'not_checkable_from\n  _available_data' values surface in practice",
+    note: "" },
+
+  { id: "evaluator", idx: 9, kind: "env", x: 2060, y: 240, title: "Evaluator (Rubric Tree)",
+    file: "paper_program_eval.py &middot evaluate_paper_program",
+    what: "Scores how faithfully the executed program reproduces the paper's own stated method, component by component.",
+    calc: "source_depth, mathematical_specificity,\nimplementation_exactness,\n &sum; w_k&middotcomponent_score_k  (required vs optional),\nregex-pattern implementation_invariants,\nalgorithm_step coverage,\nassumption/output-contract recall\n  &rarr; produces I(&tau;)",
+    metrics: "source_depth: 1.0 if full_text evidence was available, else lower\nmathematical_specificity: whether the extracted spec has\n  enough real math to constrain an implementation\nimplementation_exactness: penalizes proxy/approximation\n  substitutions for missing paper detail\nimplementation_coverage_score: &sum; w_k&middotscore_k over required-\n  vs-optional components - how much of the method got built\nassumption_check_recall / output_contract_recall: fraction of\n  the paper's own stated checks the execution addressed\npaper_program_fidelity: the overall weighted rubric score -\n  this number becomes I(&tau;)",
+    note: "" },
+
+  { id: "validator", idx: 10, kind: "env", x: 2060, y: 470, title: "Statistical Validator (Validation Tree)",
+    file: "statistical_validation.py",
+    what: "Walks 10 method-conditional nodes (hypothesis, estimand, data_applicability, multiplicity, execution, paper_fidelity, assumption_admissibility, robustness, data_method_structural_fit, internal_coherence) as a sequential terminal gate.",
+    calc: "terminal_gate &larr; first failing node\n  in the fixed 8-gate sequence\nemittable &hArr; terminal_gate==survivor\n  &and; no fatal_failed_checks\n  &and; coverage &ge; 0.85\n  &rarr; produces V(&tau;)",
+    metrics: "validation_coverage_score: mean score across all 10 tree nodes\nterminal_gate: which gate (if any) the trajectory failed at\n  first, in the fixed 8-gate sequence\nemittable: boolean - every gating condition satisfied at once\nthis number becomes V(&tau;)",
+    note: "assumption_admissibility currently requires literal 100% recall on stated assumptions (threshold=1.0, aggregation='all') - the single biggest driver of abstention in the completed run (256/596 rollouts)." },
+
+  { id: "datascore", idx: 11, kind: "env", x: 2060, y: 700, title: "Data Score",
+    file: "trajectory_reward.py &middot _data_score",
+    what: "Combines the paper's own diagnostic/assumption-check coverage with the raw statistical output the program produced.",
+    calc: "if K &ge; 1 diagnostic/assumption_check\ncomponents in the method_spec:\n  D = 0.55&middotD_paper + 0.30&middotC + 0.15&middotS - &pi;\nelse (K=0, nothing paper-specific to score):\n  D = 0.75&middotC + 0.25&middotS - &pi;\nC = cross-val R&sup2;/accuracy, S = sign stability\n&pi; = condition-number penalty",
+    metrics: "D_paper: weighted coverage of the paper's own diagnostic /\n  assumption_check components - did the code check what the\n  paper itself said needed checking\nC: cross-validated R&sup2; or accuracy, whichever the output exposes\nS: bootstrap sign stability of the fitted coefficients\n&pi;: condition-number penalty for ill-conditioned fits\nthese combine into D(&tau;)",
+    note: "Only fires the D_paper branch on 18.6% of scored rollouts in the completed run - the rest fall back, because generated code rarely implements diagnostic/assumption_check components." },
+
+  { id: "critique", idx: 12, kind: "env", x: 2060, y: 930, title: "Critique", thinSchema: true,
+    file: "critique_tools.py &middot critique_finding_openrouter",
+    what: "An independent LLM critic checks the actual computed data evidence against hard numeric thresholds before emission is allowed, using literature only as caution, never as validation.",
+    calc: "approve only if:\n  regression:     cv_r2_mean &ge; 0.05\n  classification: cv_score_mean &ge; 0.55\nveto if required metric missing/below\n  &rarr; approved_for_emit &isin; {true, false}",
+    metrics: "approved_for_emit: boolean - an independent LLM veto\nre-checks the same cv_r2_mean / cv_score_mean thresholds\n  node 8 and node 11 already computed, but as a hard\n  pass/fail gate rather than a graded score",
+    schema: "critique_tools.py &middot critique_finding_openrouter\nnot a dedicated validator like the 5 flagged nodes above -\n  just parsed = json.loads(message['content']),\n  a bare try/except around the whole request\nno required-field checklist, no format_invalid status\napproved_for_emit &larr; bool(parsed.get('approved_for_emit'))\n  missing/falsy silently reads as False, not as an error\nany exception (bad JSON included) falls back to\n  critique_finding_deterministic(), not a flagged failure",
+    note: "Can veto emission even after the validation tree already passed - a second, independent check on the same execution output." },
+
+  { id: "reward", idx: 13, kind: "reward", x: 2340, y: 470, title: "Terminal Reward R(&tau;)",
+    file: "trajectory_reward.py &middot compute_trajectory_reward",
+    what: "The single scalar computed once, after the trajectory has already stopped, that combines everything measured above. This is the only node whose output ever becomes the RL reward.",
+    calc: "if implementation hard gate failed:\n  R = clip[0,1]( 0.50&middotI )\nelse:\n  R = clip[0,1]( 0.30&middotI + 0.45&middotD + 0.25&middotV\n                 + A - &and; )\n&and; = min(0.2, 0.01&middot|&tau;|)  action-cost penalty",
+    metrics: "I(&tau;), D(&tau;), V(&tau;): the three graded scores from nodes 9, 11, 10\nA(&tau;): a small fixed bonus for correctly abstaining on weak\n  statistics rather than crashing or stopping early\n&and;(&tau;): an action-cost penalty scaled by trajectory length\nall five combine into the one number, R(&tau;)",
+    note: "" },
+
+  { id: "emit", idx: 14, kind: "env", x: 2340, y: 700, title: "Emission Decision",
+    file: "trajectory_reward.py &middot final_decision_from_reward",
+    what: "A sequential set of checks, independent of R(&tau;)'s magnitude, that decides whether the trajectory is allowed to emit a finding at all.",
+    calc: "checks in order:\n  candidate exists?\n  implementation hard gate passed?\n  validation tree emittable?\n  data_score &ge; 0.2?\n  critique approved_for_emit?\n&rarr; 'emitted' or one of 5 abstained_* labels",
+    metrics: "no new metric is computed here - this node is a decision\n  function over metrics already computed upstream\n  (candidate existence, hard-gate verdict, emittable,\n  data_score &ge; 0.2, critique approval).",
+    note: "0 of 596 rollouts in the completed run reached 'emitted' - every one stopped at one of these checks despite many having a substantial, non-zero R(&tau;)." },
+
+  { id: "grpo", idx: 15, kind: "policy", x: 2340, y: 40, title: "GRPO Update",
+    file: "grpo_query_policy.py = run_multi_group + grpo_step",
+    what: "Closes the loop: compares this trajectory's terminal reward against the rest of its group, then updates &pi;_θ.",
+    calc: "advantage = R(&tau;) - mean(R of other\n  rollouts in the same group)\nloss = -advantage &middot &Sigma;<sub>t</sub> log &pi;(token_t)\n  + KL penalty (optional)\nbackward(); optimizer.step()",
+    metrics: "advantage: this trajectory's R(&tau;) minus the mean R(&tau;) of the\n  other rollouts in its group - the only credit signal used\nloss: negative advantage times the summed log-probability of\n  every generated token, plus an optional KL penalty term\n  against a frozen reference policy",
+    note: "Every query action inside one trajectory receives the identical group-normalized advantage - credit is a property of the whole trajectory, not of any single decision inside it." },
+];
+
+const EDGES = [
+  ["policy","retrieval"], ["retrieval","pdf"], ["pdf","summarizer"],
+  ["summarizer","select"], ["screen","select"], ["select","codegen"],
+  ["codegen","exec"],
+  ["exec","evaluator"], ["select","evaluator"],
+  ["exec","validator"], ["evaluator","validator"],
+  ["exec","datascore"], ["evaluator","datascore"],
+  ["exec","critique"],
+  ["evaluator","reward"], ["validator","reward"], ["datascore","reward"],
+  ["critique","emit"], ["reward","emit"],
+  ["emit","grpo"],
+  ["grpo","policy","feedback"],
+];
+
+const CARD_W = 202, CARD_H = 96;
+const KIND_COLOR = { policy: "var(--policy)", env: "var(--ink-faint)", reward: "var(--accent)" };
+
+function portOf(node, side) {
+  const x = node.x, y = node.y;
+  if (side === "right") return { x: x + CARD_W, y: y + CARD_H / 2 };
+  if (side === "left") return { x: x, y: y + CARD_H / 2 };
+  if (side === "top") return { x: x + CARD_W / 2, y: y };
+  return { x: x + CARD_W / 2, y: y + CARD_H };
+}
+
+function buildWorld() {
+  const world = document.getElementById("world");
+  const byId = Object.fromEntries(NODES.map(n => [n.id, n]));
+
+  // cluster labels
+  const clusters = [
+    { x: 30, y: 420, label: "query & retrieval" },
+    { x: 1195, y: 250, label: "data-side screening" },
+    { x: 1780, y: 420, label: "generate & execute" },
+    { x: 2055, y: 190, label: "scoring fan-out" },
+    { x: 2335, y: 420, label: "terminal" },
+  ];
+  clusters.forEach(c => {
+    const d = document.createElement("div");
+    d.className = "cluster-label";
+    d.style.left = c.x + "px"; d.style.top = c.y + "px";
+    d.textContent = c.label;
+    world.appendChild(d);
+  });
+
+  // node cards
+  NODES.forEach(n => {
+    const card = document.createElement("div");
+    card.className = "node-card " + (n.kind === "policy" ? "policy" : n.kind === "reward" ? "reward" : "");
+    card.style.left = n.x + "px"; card.style.top = n.y + "px";
+    card.dataset.id = n.id;
+    const hasMetrics = n.metrics && !n.metrics.startsWith("no ");
+    card.innerHTML = `
+      ${n.schema ? `<div class="schema-flag${n.thinSchema ? " thin" : ""}" title="${n.thinSchema ? "only a bare try/except, not a dedicated validator" : "has a structural validation check"}"></div>` : ""}
+      ${hasMetrics ? '<div class="metrics-flag" title="computes real evaluation metrics here"></div>' : ""}
+      <div class="idx"><span>${n.idx.toString().padStart(2,"0")}</span><span class="kind-dot" style="background:${KIND_COLOR[n.kind]}"></span></div>
+      <div class="title">${n.title}</div>
+      <div class="summary">${n.what.split(".")[0]}.</div>
+      <div class="ref">${n.file.split(" ")[0]}</div>
+    `;
+    card.addEventListener("click", () => openDrawer(n.id));
+    world.appendChild(card);
+  });
+
+  // edges
+  const svg = document.getElementById("edges");
+  EDGES.forEach(([fromId, toId, kind]) => {
+    const from = byId[fromId], to = byId[toId];
+    const isFeedback = kind === "feedback";
+    let d;
+    if (isFeedback) {
+      const p1 = portOf(from, "top");
+      const p2 = portOf(to, "top");
+      const midY = Math.min(p1.y, p2.y) - 90;
+      d = `M ${p1.x} ${p1.y} C ${p1.x} ${midY}, ${p2.x} ${midY}, ${p2.x} ${p2.y}`;
+    } else {
+      const vertical = Math.abs(from.x - to.x) < 5;
+      const p1 = vertical ? portOf(from, from.y < to.y ? "bottom" : "top") : portOf(from, "right");
+      const p2 = vertical ? portOf(to, from.y < to.y ? "top" : "bottom") : portOf(to, "left");
+      const midX = (p1.x + p2.x) / 2;
+      d = vertical
+        ? `M ${p1.x} ${p1.y} C ${p1.x} ${(p1.y+p2.y)/2}, ${p2.x} ${(p1.y+p2.y)/2}, ${p2.x} ${p2.y}`
+        : `M ${p1.x} ${p1.y} C ${midX} ${p1.y}, ${midX} ${p2.y}, ${p2.x} ${p2.y}`;
+    }
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", d);
+    path.setAttribute("class", "edge" + (isFeedback ? " feedback" : ""));
+    svg.appendChild(path);
+  });
+}
+
+// ---------- drawer ----------
+const drawer = document.getElementById("drawer");
+const drawerContent = document.getElementById("drawer-content");
+let currentIdx = 0;
+
+function openDrawer(id) {
+  const n = NODES.find(x => x.id === id);
+  currentIdx = NODES.indexOf(n);
+  renderDrawer(n);
+  drawer.classList.add("open");
+}
+function renderDrawer(n) {
+  drawerContent.innerHTML = `
+    <div class="d-kind">${n.kind === "policy" ? "policy-optimized node" : n.kind === "reward" ? "terminal reward" : "environment computation"}</div>
+    <h2>${n.title}</h2>
+    <div class="d-ref">${n.file}</div>
+    <div class="d-what">${n.what}</div>
+    <div class="d-calc-label">Actual calculation</div>
+    <div class="d-calc">${n.calc}</div>
+    ${n.metrics ? `<div class="d-calc-label">Metrics computed here</div><div class="d-calc metrics">${n.metrics}</div>` : ""}
+    ${n.schema ? `<div class="d-calc-label">${n.thinSchema ? "Structural validation - thin, not a dedicated check" : "Structural validation"}</div><div class="d-calc schema">${n.schema}</div>` : ""}
+    ${n.note ? `<div class="d-note${n.warn ? " warn" : ""}">${n.note}</div>` : ""}
+    <div class="d-nav">
+      <button id="nav-prev">&larr;; previous node</button>
+      <button id="nav-next">next node &rarr;</button>
+    </div>
+  `;
+  document.getElementById("nav-prev").addEventListener("click", () => {
+    currentIdx = (currentIdx - 1 + NODES.length) % NODES.length;
+    renderDrawer(NODES[currentIdx]);
+    focusNode(NODES[currentIdx].id);
+  });
+  document.getElementById("nav-next").addEventListener("click", () => {
+    currentIdx = (currentIdx + 1) % NODES.length;
+    renderDrawer(NODES[currentIdx]);
+    focusNode(NODES[currentIdx].id);
+  });
+}
+document.getElementById("drawer-close").addEventListener("click", () => drawer.classList.remove("open"));
+
+// ---------- pan & zoom ----------
+const stage = document.getElementById("stage");
+const world = document.getElementById("world");
+let scale = 0.62, tx = 40, ty = 0;
+let isPanning = false, panStartX = 0, panStartY = 0, txStart = 0, tyStart = 0;
+
+function applyTransform() {
+  world.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+  document.getElementById("zoom-readout").textContent = Math.round(scale * 100) + "%";
+}
+function focusNode(id) {
+  const n = NODES.find(x => x.id === id);
+  const rect = stage.getBoundingClientRect();
+  tx = rect.width / 2 - (n.x + CARD_W / 2) * scale;
+  ty = rect.height / 2 - (n.y + CARD_H / 2) * scale;
+  applyTransform();
+}
+function fitAll() {
+  const rect = stage.getBoundingClientRect();
+  scale = Math.min(rect.width / 2500, rect.height / 1180) * 0.94;
+  tx = (rect.width - 2500 * scale) / 2;
+  ty = (rect.height - 1180 * scale) / 2;
+  applyTransform();
+}
+
+stage.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const rect = stage.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const worldX = (mx - tx) / scale, worldY = (my - ty) / scale;
+  const delta = -e.deltaY * 0.0015;
+  scale = Math.min(1.8, Math.max(0.25, scale * (1 + delta)));
+  tx = mx - worldX * scale;
+  ty = my - worldY * scale;
+  applyTransform();
+}, { passive: false });
+
+stage.addEventListener("mousedown", (e) => {
+  isPanning = true; stage.classList.add("grabbing");
+  panStartX = e.clientX; panStartY = e.clientY; txStart = tx; tyStart = ty;
+});
+window.addEventListener("mousemove", (e) => {
+  if (!isPanning) return;
+  tx = txStart + (e.clientX - panStartX);
+  ty = tyStart + (e.clientY - panStartY);
+  applyTransform();
+});
+window.addEventListener("mouseup", () => { isPanning = false; stage.classList.remove("grabbing"); });
+
+document.getElementById("zoom-in").addEventListener("click", () => { scale = Math.min(1.8, scale * 1.2); applyTransform(); });
+document.getElementById("zoom-out").addEventListener("click", () => { scale = Math.max(0.25, scale / 1.2); applyTransform(); });
+document.getElementById("zoom-fit").addEventListener("click", fitAll);
+
+buildWorld();
+requestAnimationFrame(fitAll);
+</script>

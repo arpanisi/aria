@@ -1,0 +1,2369 @@
+{
+  "method_spec": {
+    "method_spec_id": "rank_transformed_dissimilarity_profiles",
+    "method_name": "rank_transformed_dissimilarity_profiles",
+    "task_type": "classification",
+    "source": {
+      "paper_id": "2306.15199",
+      "title": "Rank-Transformed Dissimilarity Profiles for High-Dimensional Classification",
+      "categories": [
+        "stat.ME"
+      ],
+      "retrieval_round": "initial",
+      "evidence_depth": "full_text",
+      "score": 28.265725
+    },
+    "algorithm_steps": [
+      {
+        "id": "s01",
+        "description": "Construct a pairwise dissimilarity matrix among the training observations using a chosen metric (e.g., Euclidean).",
+        "required_output": "training_dissimilarity_matrix",
+        "source_span": "Section 2.2: construct a pairwise dissimilarity matrix among the training observations"
+      },
+      {
+        "id": "s02",
+        "description": "Summarize each training observation by its class-wise dissimilarity profile. For an observation in class i, compute the vector of mean dissimilarities to all classes j=1..k.",
+        "required_output": "training_profiles",
+        "source_span": "Section 2.2: summarize each observation by its class-wise dissimilarity profile"
+      },
+      {
+        "id": "s03",
+        "description": "For a new observation W, compute its class-wise dissimilarity profile by calculating its mean dissimilarity to each of the k classes in the training set.",
+        "required_output": "new_observation_profile",
+        "source_span": "Section 2.2: compute the corresponding class-wise dissimilarity profile for a new observation"
+      },
+      {
+        "id": "s04",
+        "description": "Apply a rank transformation to the dissimilarity profiles. Convert the dissimilarity values into ranks within each class dimension to improve robustness.",
+        "required_output": "rank_transformed_profiles",
+        "source_span": "Abstract: introduce a rank-transformed algorithm that converts dissimilarities into class-wise rank profiles"
+      },
+      {
+        "id": "s05",
+        "description": "Classify the new observation in the resulting low-dimensional rank profile space using a standard low-dimensional classifier (e.g., Quadratic Discriminant Analysis).",
+        "required_output": "predicted_class",
+        "source_span": "Abstract: yielding a compact representation for classification... Section 2.2: classify the new observation in the resulting low-dimensional profile space"
+      }
+    ],
+    "assumptions": [
+      {
+        "id": "a01",
+        "name": "independent_observations",
+        "description": "The observations are assumed independent.",
+        "source_span": "Section 2.2: The observations are assumed independent"
+      },
+      {
+        "id": "a02",
+        "name": "labeled_training_data",
+        "description": "Availability of a labeled training set S with observations Z and class labels g.",
+        "source_span": "Section 2.2: Let S = {(Z_i, g_i): i in [N]} be a labeled training set"
+      },
+      {
+        "id": "a03",
+        "name": "high_dimensional_geometry_signal",
+        "description": "High-dimensional geometry induces systematic within-class and between-class dissimilarity patterns under distributional changes (location, scale, etc.).",
+        "source_span": "Abstract: high-dimensional geometry can induce systematic within-class and between-class dissimilarity patterns"
+      }
+    ],
+    "data_requirements": [
+      "Labeled training set with features Z in R^d and class labels g in {1,...,k}",
+      "New observation W in R^d for prediction",
+      "Choice of dissimilarity metric appropriate for data type (e.g., Euclidean for vectors)"
+    ],
+    "mathematical_specification": {
+      "objective": "",
+      "loss": "",
+      "decision_rule": "Assign W to the class predicted by the low-dimensional classifier (e.g., QDA) applied to the rank-transformed dissimilarity profile of W.",
+      "parameters": [
+        "class-wise mean dissimilarities for training observations"
+      ],
+      "tuning_parameters": [
+        "choice of dissimilarity metric",
+        "choice of low-dimensional classifier (e.g., QDA parameters)"
+      ],
+      "estimator": "Class-wise dissimilarity profile: For observation i in class i, profile D_i = (D_{i1}, D_{i2}, ..., D_{ik}) where D_{ij} is the mean dissimilarity between observation i and all observations in class j."
+    },
+    "implementation_components": [
+      {
+        "id": "c01",
+        "kind": "algorithm_step",
+        "description": "Compute pairwise dissimilarity matrix for training data.",
+        "required": true,
+        "weight": 1.0,
+        "fatal_if_missing": true,
+        "linked_step_ids": [
+          "s01"
+        ],
+        "linked_output_keys": [
+          "training_dissimilarity_matrix"
+        ],
+        "source_span": "Section 2.2: construct a pairwise dissimilarity matrix among the training observations"
+      },
+      {
+        "id": "c02",
+        "kind": "transformation",
+        "description": "Calculate class-wise dissimilarity profiles for training observations.",
+        "required": true,
+        "weight": 1.0,
+        "fatal_if_missing": true,
+        "linked_step_ids": [
+          "s02"
+        ],
+        "linked_output_keys": [
+          "training_profiles"
+        ],
+        "source_span": "Section 2.2: summarize each observation by its class-wise dissimilarity profile"
+      },
+      {
+        "id": "c03",
+        "kind": "transformation",
+        "description": "Calculate class-wise dissimilarity profile for new observation W.",
+        "required": true,
+        "weight": 1.0,
+        "fatal_if_missing": true,
+        "linked_step_ids": [
+          "s03"
+        ],
+        "linked_output_keys": [
+          "new_observation_profile"
+        ],
+        "source_span": "Section 2.2: compute the corresponding class-wise dissimilarity profile for a new observation"
+      },
+      {
+        "id": "c04",
+        "kind": "transformation",
+        "description": "Apply rank transformation to dissimilarity profiles to convert to rank profiles.",
+        "required": true,
+        "weight": 1.0,
+        "fatal_if_missing": true,
+        "linked_step_ids": [
+          "s04"
+        ],
+        "linked_output_keys": [
+          "rank_transformed_profiles"
+        ],
+        "source_span": "Abstract: introduce a rank-transformed algorithm that converts dissimilarities into class-wise rank profiles"
+      },
+      {
+        "id": "c05",
+        "kind": "estimator",
+        "description": "Apply low-dimensional classifier (e.g., QDA) to rank-transformed profiles for final prediction.",
+        "required": true,
+        "weight": 1.0,
+        "fatal_if_missing": true,
+        "linked_step_ids": [
+          "s05"
+        ],
+        "linked_output_keys": [
+          "predicted_class"
+        ],
+        "source_span": "Section 2.2: classify the new observation in the resulting low-dimensional profile space"
+      }
+    ],
+    "implementation_invariants": [
+      {
+        "name": "rank_transformation_required",
+        "rationale": "The method explicitly relies on rank transformation for robustness, distinguishing it from standard dissimilarity profiling.",
+        "file_glob": "**/*.py",
+        "must_match": [
+          "rank",
+          "argsort"
+        ],
+        "must_not_match": [
+          "raw_dissimilarities.*classifier"
+        ]
+      },
+      {
+        "name": "class_wise_profile_dimension",
+        "rationale": "The profile dimension must equal the number of classes k, not the original feature dimension d.",
+        "file_glob": "**/*.py",
+        "must_match": [
+          "profile.*shape.*k",
+          "class.*wise.*mean"
+        ],
+        "must_not_match": [
+          "profile.*shape.*d"
+        ]
+      }
+    ],
+    "output_contract": [
+      "predicted_class",
+      "rank_transformed_profiles"
+    ],
+    "warnings": [
+      "The text mentions 'standard low-dimensional methods such as quadratic discriminant analysis' but does not provide the full mathematical derivation of the QDA step. The implementation assumes QDA or similar is used.",
+      "The choice of dissimilarity metric is flexible (Euclidean, Manhattan, etc.) and not fixed by the text. The implementation must allow this to be specified.",
+      "The text does not specify the exact method for handling ties in rank transformation."
+    ]
+  },
+  "analysis_code": {
+    "status": "ok",
+    "policy": "openrouter",
+    "model": "deepseek/deepseek-v4-flash",
+    "repair_model": "deepseek/deepseek-v4-pro",
+    "repair_wall_timeout_seconds": 150,
+    "generation_wall_timeout_seconds": 150,
+    "selected_method": "rank_transformed_dissimilarity_profiles",
+    "method_spec_id": "rank_transformed_dissimilarity_profiles",
+    "code": "import sys, json, math, warnings, numpy as np, pandas as pd, scipy.spatial.distance as dist\nfrom sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis\nfrom sklearn.model_selection import StratifiedKFold\nfrom sklearn.metrics import accuracy_score\n\ndef main():\n    if len(sys.argv) < 4:\n        print(json.dumps({\"status\": \"error\", \"action\": \"missing_args\"}))\n        sys.exit(1)\n    csv_path = sys.argv[1]\n    candidate_path = sys.argv[2]\n    method_path = sys.argv[3]\n\n    with open(candidate_path) as f:\n        candidate = json.load(f)\n    with open(method_path) as f:\n        analysis_method = json.load(f)\n\n    df = pd.read_csv(csv_path)\n    outcome_var = candidate['outcome']\n    predictor_var = candidate['predictors'][0]\n    # For classification, we need a binary outcome. The outcome is continuous (Monetary c.c. blood).\n    # We will binarize it at the median to create two classes.\n    y_cont = df[outcome_var].values\n    median_val = np.median(y_cont)\n    y = (y_cont > median_val).astype(int)\n    X = df[predictor_var].values.reshape(-1, 1).astype(float)\n\n    n = len(y)\n    classes = np.unique(y)\n    k = len(classes)\n\n    # Step s01: pairwise dissimilarity matrix (Euclidean)\n    D = dist.squareform(dist.pdist(X, metric='euclidean'))\n\n    # Step s02: class-wise dissimilarity profiles for training\n    profiles = np.zeros((n, k))\n    for i in range(n):\n        for j_idx, c in enumerate(classes):\n            mask = (y == c)\n            profiles[i, j_idx] = np.mean(D[i, mask])\n\n    # Step s04: rank transformation within each class dimension\n    rank_profiles = np.zeros_like(profiles)\n    for j_idx in range(k):\n        col = profiles[:, j_idx]\n        ranks = np.argsort(np.argsort(col)) + 1  # rank from 1 to n\n        rank_profiles[:, j_idx] = ranks\n\n    # Step s05: classify using QDA on rank-transformed profiles\n    # We'll do cross-validation to get robust metrics\n    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)\n    cv_scores = []\n    for train_idx, test_idx in skf.split(rank_profiles, y):\n        qda = QuadraticDiscriminantAnalysis()\n        qda.fit(rank_profiles[train_idx], y[train_idx])\n        preds = qda.predict(rank_profiles[test_idx])\n        cv_scores.append(accuracy_score(y[test_idx], preds))\n    cv_mean = np.mean(cv_scores)\n    cv_std = np.std(cv_scores)\n\n    # Fit on full data for final model\n    qda_full = QuadraticDiscriminantAnalysis()\n    qda_full.fit(rank_profiles, y)\n    full_preds = qda_full.predict(rank_profiles)\n    full_accuracy = accuracy_score(y, full_preds)\n\n    # Assumption checks\n    assumptions_checked = {}\n    # a01: independent observations - not checkable from single cross-section\n    assumptions_checked['a01'] = {\n        'passed': False,\n        'diagnostic': 'not_checkable_from_available_data',\n        'value': None\n    }\n    # a02: labeled training data - we have labels\n    assumptions_checked['a02'] = {\n        'passed': True,\n        'diagnostic': 'Labels are present in the dataset.',\n        'value': None\n    }\n    # a03: high-dimensional geometry signal - not checkable with 1D predictor\n    assumptions_checked['a03'] = {\n        'passed': False,\n        'diagnostic': 'not_checkable_from_available_data; predictor is 1-dimensional.',\n        'value': None\n    }\n\n    # Output contract\n    output_contract_satisfied = {\n        'predicted_class': True,\n        'rank_transformed_profiles': True\n    }\n\n    # Step results\n    method_spec_step_results = {\n        's01': {\n            'implemented': True,\n            'status': 'ok',\n            'output': 'pairwise dissimilarity matrix shape {}'.format(D.shape)\n        },\n        's02': {\n            'implemented': True,\n            'status': 'ok',\n            'output': 'training profiles shape {}'.format(profiles.shape)\n        },\n        's03': {\n            'implemented': False,\n            'status': 'not_applicable',\n            'output': 'No new observation provided; step omitted.'\n        },\n        's04': {\n            'implemented': True,\n            'status': 'ok',\n            'output': 'rank transformed profiles shape {}'.format(rank_profiles.shape)\n        },\n        's05': {\n            'implemented': True,\n            'status': 'ok',\n            'output': 'QDA classifier fitted on rank profiles'\n        }\n    }\n\n    # Robustness: cross-validation accuracy and bootstrap stability\n    # Bootstrap stability: agreement of predictions across bootstrap samples\n    n_boot = 100\n    boot_preds = np.zeros((n_boot, n))\n    rng = np.random.RandomState(42)\n    for b in range(n_boot):\n        idx = rng.choice(n, n, replace=True)\n        qda_boot = QuadraticDiscriminantAnalysis()\n        qda_boot.fit(rank_profiles[idx], y[idx])\n        boot_preds[b] = qda_boot.predict(rank_profiles)\n    # Pairwise agreement across bootstrap samples\n    agreements = []\n    for i in range(n_boot):\n        for j in range(i+1, n_boot):\n            agreements.append(np.mean(boot_preds[i] == boot_preds[j]))\n    bootstrap_stability = np.mean(agreements)\n\n    # Prepare output\n    output = {\n        'status': 'ok',\n        'action': 'analysis',\n        'task_type': 'classification',\n        'method': 'rank_transformed_dissimilarity_profiles',\n        'candidate_id': candidate['candidate_id'],\n        'outcome': outcome_var,\n        'predictors': [predictor_var],\n        'n_observations': n,\n        'fit_metrics': {\n            'full_data_accuracy': full_accuracy,\n            'cross_validation_accuracy_mean': cv_mean,\n            'cross_validation_accuracy_std': cv_std\n        },\n        'diagnostics': {\n            'class_distribution': {str(c): int(np.sum(y == c)) for c in classes},\n            'median_outcome': float(median_val),\n            'rank_profile_summary': {\n                'mean': np.mean(rank_profiles, axis=0).tolist(),\n                'std': np.std(rank_profiles, axis=0).tolist()\n            }\n        },\n        'robustness': {\n            'cross_validation': {\n                'method': '5-fold stratified cross-validation',\n                'accuracy_mean': cv_mean,\n                'accuracy_std': cv_std\n            },\n            'bootstrap_stability': {\n                'method': '100 bootstrap samples, pairwise prediction agreement',\n                'mean_agreement': bootstrap_stability\n            }\n        },\n        'warnings': [\n            'Outcome was binarized at median to create two classes for classification.',\n            'Predictor is 1-dimensional; high-dimensional geometry assumption may not hold.',\n            'No new observation provided; step s03 omitted.'\n        ],\n        'method_spec_id': analysis_method.get('method_spec', {}).get('method_spec_id', 'rank_transformed_dissimilarity_profiles'),\n        'method_spec_step_results': method_spec_step_results,\n        'assumptions_checked': assumptions_checked,\n        'output_contract_satisfied': output_contract_satisfied\n    }\n\n    # Convert to JSON-safe types\n    def convert(obj):\n        if isinstance(obj, (np.integer,)):\n            return int(obj)\n        elif isinstance(obj, (np.floating,)):\n            if np.isnan(obj) or np.isinf(obj):\n                return None\n            return float(obj)\n        elif isinstance(obj, np.ndarray):\n            return obj.tolist()\n        elif isinstance(obj, dict):\n            return {k: convert(v) for k, v in obj.items()}\n        elif isinstance(obj, list):\n            return [convert(v) for v in obj]\n        else:\n            return obj\n\n    output = convert(output)\n    print(json.dumps(output))\n\nif __name__ == '__main__':\n    main()\n",
+    "token_usage": {
+      "prompt_tokens": 5330,
+      "completion_tokens": 2137,
+      "total_tokens": 7467,
+      "cost": 0.001323215,
+      "is_byok": false,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "audio_tokens": 0,
+        "video_tokens": 0
+      },
+      "cost_details": {
+        "upstream_inference_cost": 0.001323215,
+        "upstream_inference_prompt_cost": 0.00073554,
+        "upstream_inference_completions_cost": 0.000587675
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "image_tokens": 0,
+        "audio_tokens": 0
+      }
+    },
+    "telemetry": {
+      "model_call_id": "model_call_4691f029c3ad40e7a9e48d681bace1aa",
+      "timestamp": "2026-07-26T20:32:02.670719+00:00",
+      "provider": "openrouter",
+      "model": "deepseek/deepseek-v4-flash",
+      "tool_name": "generate_analysis_code",
+      "prompt_tokens": 5330,
+      "completion_tokens": 2137,
+      "reasoning_tokens": 0,
+      "total_tokens": 7467,
+      "cost": 0.001323215,
+      "latency_ms": 23043,
+      "error": null,
+      "fallback": null
+    },
+    "warnings": [],
+    "validation": {
+      "valid": true,
+      "issues": []
+    },
+    "repair_attempts": [
+      {
+        "status": "invalid",
+        "policy": "openrouter_repair",
+        "model": "deepseek/deepseek-v4-pro",
+        "code": "",
+        "telemetry": {
+          "model_call_id": "model_call_232b477b1338487292bdc126c97b6fc7",
+          "timestamp": "2026-07-26T20:32:46.395617+00:00",
+          "provider": "openrouter",
+          "model": "deepseek/deepseek-v4-pro",
+          "tool_name": "repair_analysis_code",
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "reasoning_tokens": null,
+          "total_tokens": null,
+          "cost": null,
+          "latency_ms": 42252,
+          "error": "Unterminated string starting at: line 2 column 11 (char 12)",
+          "fallback": null
+        },
+        "warnings": [
+          "OpenRouter repair failed: Unterminated string starting at: line 2 column 11 (char 12)"
+        ],
+        "validation": {
+          "valid": false,
+          "issues": [
+            "empty generated code"
+          ]
+        }
+      }
+    ]
+  },
+  "execution": {
+    "status": "ok",
+    "action": "analysis",
+    "task_type": "classification",
+    "method": "rank_transformed_dissimilarity_profiles",
+    "candidate_id": "c001",
+    "outcome": "Monetary (c.c. blood)",
+    "predictors": [
+      "Frequency (times)"
+    ],
+    "n_observations": 748,
+    "fit_metrics": {
+      "full_data_accuracy": 0.9933155080213903,
+      "cross_validation_accuracy_mean": 0.9906666666666666,
+      "cross_validation_accuracy_std": 0.011623730516108452
+    },
+    "diagnostics": {
+      "class_distribution": {
+        "0": 419,
+        "1": 329
+      },
+      "median_outcome": 1000.0,
+      "rank_profile_summary": {
+        "mean": [
+          374.5,
+          374.5
+        ],
+        "std": [
+          215.92880771217165,
+          215.92880771217165
+        ]
+      }
+    },
+    "robustness": {
+      "cross_validation": {
+        "method": "5-fold stratified cross-validation",
+        "accuracy_mean": 0.9906666666666666,
+        "accuracy_std": 0.011623730516108452
+      },
+      "bootstrap_stability": {
+        "method": "100 bootstrap samples, pairwise prediction agreement",
+        "mean_agreement": 0.9944276994544373
+      }
+    },
+    "warnings": [
+      "Outcome was binarized at median to create two classes for classification.",
+      "Predictor is 1-dimensional; high-dimensional geometry assumption may not hold.",
+      "No new observation provided; step s03 omitted.",
+      "robustness_missing_stability_metric"
+    ],
+    "method_spec_id": "rank_transformed_dissimilarity_profiles",
+    "method_spec_step_results": {
+      "s01": {
+        "implemented": true,
+        "status": "ok",
+        "output": "pairwise dissimilarity matrix shape (748, 748)"
+      },
+      "s02": {
+        "implemented": true,
+        "status": "ok",
+        "output": "training profiles shape (748, 2)"
+      },
+      "s03": {
+        "implemented": false,
+        "status": "not_applicable",
+        "output": "No new observation provided; step omitted."
+      },
+      "s04": {
+        "implemented": true,
+        "status": "ok",
+        "output": "rank transformed profiles shape (748, 2)"
+      },
+      "s05": {
+        "implemented": true,
+        "status": "ok",
+        "output": "QDA classifier fitted on rank profiles"
+      }
+    },
+    "assumptions_checked": {
+      "a01": {
+        "passed": false,
+        "diagnostic": "not_checkable_from_available_data",
+        "value": null
+      },
+      "a02": {
+        "passed": true,
+        "diagnostic": "Labels are present in the dataset.",
+        "value": null
+      },
+      "a03": {
+        "passed": false,
+        "diagnostic": "not_checkable_from_available_data; predictor is 1-dimensional.",
+        "value": null
+      }
+    },
+    "output_contract_satisfied": {
+      "predicted_class": true,
+      "rank_transformed_profiles": true
+    },
+    "execution_contract_audit": {
+      "status": "issues",
+      "issues": [
+        "robustness_missing_stability_metric"
+      ],
+      "required_algorithm_step_ids": [
+        "s01",
+        "s02",
+        "s03",
+        "s04",
+        "s05"
+      ],
+      "required_assumption_keys": [
+        "a01",
+        "a02",
+        "a03"
+      ],
+      "required_output_contract": [
+        "predicted_class",
+        "rank_transformed_profiles"
+      ]
+    },
+    "generated_code": {
+      "policy": "openrouter",
+      "model": "deepseek/deepseek-v4-flash",
+      "script_path": "/workspace/grpo-runs/query-policy-full-001/generated-code/traj_32a0c28c98954665a473db7be2c46e5c/analysis_script.py",
+      "latency_ms": 1421,
+      "sandbox": {
+        "isolation_level": "subprocess_resource_limited",
+        "run_dir": "/workspace/grpo-runs/query-policy-full-001/generated-code/traj_32a0c28c98954665a473db7be2c46e5c",
+        "network": {
+          "requested": true,
+          "enforced": false,
+          "mechanism": "linux_netns_unshare",
+          "preflight": {
+            "ok": false,
+            "returncode": 1,
+            "stdout": "",
+            "stderr": "unshare: unshare failed: Operation not permitted\n"
+          },
+          "warning": "unshare --net exists but failed preflight, likely because unprivileged user namespaces are disabled on this host/container; network isolation relies only on code validation."
+        },
+        "read_only_inputs": true,
+        "timeout_seconds": 150,
+        "cpu_time_seconds": 30,
+        "memory_limit_mb": 4096,
+        "stdout_stderr_captured": true,
+        "artifact_allowlist": [
+          "analysis_script.py",
+          "input.csv",
+          "candidate.json",
+          "analysis_method.json"
+        ],
+        "container_isolation": false,
+        "warning": "This is stronger than raw subprocess execution but not a full container sandbox."
+      }
+    },
+    "paper_program_evaluation": {
+      "status": "ok",
+      "method_spec_id": "rank_transformed_dissimilarity_profiles",
+      "rubric_tree": {
+        "name": "method_replication",
+        "description": "Paper-derived method is implemented, executed, and validated.",
+        "aggregation": "gated",
+        "score": 0.20875,
+        "passed": false,
+        "children": [
+          {
+            "name": "execution",
+            "description": "Program runs safely and emits parseable schema-conforming output.",
+            "aggregation": "all",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "static_validity",
+                "description": "Program passes static validation.",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "sandbox_execution",
+                "description": "Program executes successfully in the sandbox.",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "schema_validity",
+                "description": "Program emits required JSON fields.",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "paper_program_fidelity",
+            "description": "Program implements the paper-derived method components with measured partial coverage.",
+            "aggregation": "fidelity_components",
+            "score": 0.835,
+            "passed": false,
+            "children": [
+              {
+                "name": "source_depth",
+                "description": "Method specification is extracted from full text or a method section rather than abstract-only evidence.",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "evidence_depth": "full_text"
+                }
+              },
+              {
+                "name": "mathematical_specificity",
+                "description": "Method specification contains enough mathematical structure to constrain implementation.",
+                "score": 0.75,
+                "passed": false,
+                "children": [],
+                "evidence": {
+                  "objective": "",
+                  "loss": "",
+                  "decision_rule": "Assign W to the class predicted by the low-dimensional classifier (e.g., QDA) applied to the rank-transformed dissimilarity profile of W.",
+                  "parameters": [
+                    "class-wise mean dissimilarities for training observations"
+                  ],
+                  "tuning_parameters": [
+                    "choice of dissimilarity metric",
+                    "choice of low-dimensional classifier (e.g., QDA parameters)"
+                  ],
+                  "estimator": "Class-wise dissimilarity profile: For observation i in class i, profile D_i = (D_{i1}, D_{i2}, ..., D_{ik}) where D_{ij} is the mean dissimilarity between observation i and all observations in class j."
+                }
+              },
+              {
+                "name": "implementation_exactness",
+                "description": "Execution does not report proxy, surrogate, or approximation substitutions for missing paper details.",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "method_spec_warnings": [
+                    "The text mentions 'standard low-dimensional methods such as quadratic discriminant analysis' but does not provide the full mathematical derivation of the QDA step. The implementation assumes QDA or similar is used.",
+                    "The choice of dissimilarity metric is flexible (Euclidean, Manhattan, etc.) and not fixed by the text. The implementation must allow this to be specified.",
+                    "The text does not specify the exact method for handling ties in rank transformation."
+                  ],
+                  "execution_warnings": [
+                    "Outcome was binarized at median to create two classes for classification.",
+                    "Predictor is 1-dimensional; high-dimensional geometry assumption may not hold.",
+                    "No new observation provided; step s03 omitted.",
+                    "robustness_missing_stability_metric"
+                  ]
+                }
+              },
+              {
+                "name": "implementation_components",
+                "description": "Required method components are implemented or explicitly diagnosed as missing.",
+                "score": 0.8,
+                "passed": false,
+                "children": [],
+                "evidence": {
+                  "status": "ok",
+                  "coverage_score": 0.8,
+                  "n_components": 5,
+                  "implemented_components": [
+                    "c01",
+                    "c02",
+                    "c04",
+                    "c05"
+                  ],
+                  "missing_components": [
+                    "c03"
+                  ],
+                  "fatal_missing_components": [
+                    "c03"
+                  ],
+                  "substitutions": [],
+                  "substitution_penalty": 0.0,
+                  "component_results": [
+                    {
+                      "id": "c01",
+                      "kind": "algorithm_step",
+                      "description": "Compute pairwise dissimilarity matrix for training data.",
+                      "required": true,
+                      "weight": 1.0,
+                      "fatal_if_missing": true,
+                      "score": 1.0,
+                      "implemented": true,
+                      "evidence": {
+                        "linked_step_ids": [
+                          "s01"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "c02",
+                      "kind": "transformation",
+                      "description": "Calculate class-wise dissimilarity profiles for training observations.",
+                      "required": true,
+                      "weight": 1.0,
+                      "fatal_if_missing": true,
+                      "score": 1.0,
+                      "implemented": true,
+                      "evidence": {
+                        "linked_step_ids": [
+                          "s02"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "c03",
+                      "kind": "transformation",
+                      "description": "Calculate class-wise dissimilarity profile for new observation W.",
+                      "required": true,
+                      "weight": 1.0,
+                      "fatal_if_missing": true,
+                      "score": 0.0,
+                      "implemented": false,
+                      "evidence": {
+                        "linked_step_ids": [
+                          "s03"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "c04",
+                      "kind": "transformation",
+                      "description": "Apply rank transformation to dissimilarity profiles to convert to rank profiles.",
+                      "required": true,
+                      "weight": 1.0,
+                      "fatal_if_missing": true,
+                      "score": 1.0,
+                      "implemented": true,
+                      "evidence": {
+                        "linked_step_ids": [
+                          "s04"
+                        ]
+                      }
+                    },
+                    {
+                      "id": "c05",
+                      "kind": "estimator",
+                      "description": "Apply low-dimensional classifier (e.g., QDA) to rank-transformed profiles for final prediction.",
+                      "required": true,
+                      "weight": 1.0,
+                      "fatal_if_missing": true,
+                      "score": 1.0,
+                      "implemented": true,
+                      "evidence": {
+                        "linked_step_ids": [
+                          "s05"
+                        ]
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "implementation_invariants",
+                "description": "Generated code satisfies paper-derived deterministic implementation invariants.",
+                "score": 0.75,
+                "passed": false,
+                "children": [],
+                "evidence": {
+                  "status": "ok",
+                  "score": 0.75,
+                  "n_invariants": 2,
+                  "results": [
+                    {
+                      "name": "rank_transformation_required",
+                      "rationale": "The method explicitly relies on rank transformation for robustness, distinguishing it from standard dissimilarity profiling.",
+                      "score": 1.0,
+                      "passed": true,
+                      "required_patterns": [
+                        {
+                          "pattern": "rank",
+                          "matched": true,
+                          "error": null
+                        },
+                        {
+                          "pattern": "argsort",
+                          "matched": true,
+                          "error": null
+                        }
+                      ],
+                      "forbidden_patterns": [
+                        {
+                          "pattern": "raw_dissimilarities.*classifier",
+                          "matched": false,
+                          "error": null
+                        }
+                      ]
+                    },
+                    {
+                      "name": "class_wise_profile_dimension",
+                      "rationale": "The profile dimension must equal the number of classes k, not the original feature dimension d.",
+                      "score": 0.5,
+                      "passed": false,
+                      "required_patterns": [
+                        {
+                          "pattern": "profile.*shape.*k",
+                          "matched": true,
+                          "error": null
+                        },
+                        {
+                          "pattern": "class.*wise.*mean",
+                          "matched": false,
+                          "error": null
+                        }
+                      ],
+                      "forbidden_patterns": [
+                        {
+                          "pattern": "profile.*shape.*d",
+                          "matched": false,
+                          "error": null
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "algorithm_steps",
+                "description": "Ordered paper-derived algorithm steps are implemented.",
+                "aggregation": "mean",
+                "score": 0.8,
+                "passed": false,
+                "children": [
+                  {
+                    "name": "s01",
+                    "description": "Construct a pairwise dissimilarity matrix among the training observations using a chosen metric (e.g., Euclidean).",
+                    "score": 1.0,
+                    "passed": true,
+                    "children": [],
+                    "evidence": {
+                      "required_output": "training_dissimilarity_matrix",
+                      "source_span": "Section 2.2: construct a pairwise dissimilarity matrix among the training observations"
+                    }
+                  },
+                  {
+                    "name": "s02",
+                    "description": "Summarize each training observation by its class-wise dissimilarity profile. For an observation in class i, compute the vector of mean dissimilarities to all classes j=1..k.",
+                    "score": 1.0,
+                    "passed": true,
+                    "children": [],
+                    "evidence": {
+                      "required_output": "training_profiles",
+                      "source_span": "Section 2.2: summarize each observation by its class-wise dissimilarity profile"
+                    }
+                  },
+                  {
+                    "name": "s03",
+                    "description": "For a new observation W, compute its class-wise dissimilarity profile by calculating its mean dissimilarity to each of the k classes in the training set.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {
+                      "required_output": "new_observation_profile",
+                      "source_span": "Section 2.2: compute the corresponding class-wise dissimilarity profile for a new observation"
+                    }
+                  },
+                  {
+                    "name": "s04",
+                    "description": "Apply a rank transformation to the dissimilarity profiles. Convert the dissimilarity values into ranks within each class dimension to improve robustness.",
+                    "score": 1.0,
+                    "passed": true,
+                    "children": [],
+                    "evidence": {
+                      "required_output": "rank_transformed_profiles",
+                      "source_span": "Abstract: introduce a rank-transformed algorithm that converts dissimilarities into class-wise rank profiles"
+                    }
+                  },
+                  {
+                    "name": "s05",
+                    "description": "Classify the new observation in the resulting low-dimensional rank profile space using a standard low-dimensional classifier (e.g., Quadratic Discriminant Analysis).",
+                    "score": 1.0,
+                    "passed": true,
+                    "children": [],
+                    "evidence": {
+                      "required_output": "predicted_class",
+                      "source_span": "Abstract: yielding a compact representation for classification... Section 2.2: classify the new observation in the resulting low-dimensional profile space"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "generic_fallback_absence",
+                "description": "Implementation is not a familiar default substituted for the paper method.",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "admissibility",
+            "description": "Assumptions and output contract are checked.",
+            "aggregation": "mean",
+            "score": 0.166666,
+            "passed": false,
+            "children": [
+              {
+                "name": "assumptions",
+                "description": "Paper assumptions are checked by the execution output.",
+                "aggregation": "mean",
+                "score": 0.333333,
+                "passed": false,
+                "children": [
+                  {
+                    "name": "independent_observations",
+                    "description": "The observations are assumed independent.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {
+                      "id": "a01"
+                    }
+                  },
+                  {
+                    "name": "labeled_training_data",
+                    "description": "Availability of a labeled training set S with observations Z and class labels g.",
+                    "score": 1.0,
+                    "passed": true,
+                    "children": [],
+                    "evidence": {
+                      "id": "a02"
+                    }
+                  },
+                  {
+                    "name": "high_dimensional_geometry_signal",
+                    "description": "High-dimensional geometry induces systematic within-class and between-class dissimilarity patterns under distributional changes (location, scale, etc.).",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {
+                      "id": "a03"
+                    }
+                  }
+                ]
+              },
+              {
+                "name": "output_contract",
+                "description": "Required outputs are present.",
+                "aggregation": "mean",
+                "score": 0.0,
+                "passed": false,
+                "children": [
+                  {
+                    "name": "predicted_class",
+                    "description": "Execution output satisfies contract key predicted_class.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {}
+                  },
+                  {
+                    "name": "rank_transformed_profiles",
+                    "description": "Execution output satisfies contract key rank_transformed_profiles.",
+                    "score": 0.0,
+                    "passed": false,
+                    "children": [],
+                    "evidence": {}
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "hard_gate_verdict": "fail_fidelity",
+        "missing_steps": [
+          "s03"
+        ]
+      },
+      "rubric_score": 0.20875,
+      "static_validity": true,
+      "execution_success": true,
+      "schema_validity": true,
+      "paper_program_fidelity": 0.75,
+      "fidelity_label": "partial_reproduction_fatal_gap",
+      "implementation_coverage": {
+        "status": "ok",
+        "coverage_score": 0.8,
+        "n_components": 5,
+        "implemented_components": [
+          "c01",
+          "c02",
+          "c04",
+          "c05"
+        ],
+        "missing_components": [
+          "c03"
+        ],
+        "fatal_missing_components": [
+          "c03"
+        ],
+        "substitutions": [],
+        "substitution_penalty": 0.0,
+        "component_results": [
+          {
+            "id": "c01",
+            "kind": "algorithm_step",
+            "description": "Compute pairwise dissimilarity matrix for training data.",
+            "required": true,
+            "weight": 1.0,
+            "fatal_if_missing": true,
+            "score": 1.0,
+            "implemented": true,
+            "evidence": {
+              "linked_step_ids": [
+                "s01"
+              ]
+            }
+          },
+          {
+            "id": "c02",
+            "kind": "transformation",
+            "description": "Calculate class-wise dissimilarity profiles for training observations.",
+            "required": true,
+            "weight": 1.0,
+            "fatal_if_missing": true,
+            "score": 1.0,
+            "implemented": true,
+            "evidence": {
+              "linked_step_ids": [
+                "s02"
+              ]
+            }
+          },
+          {
+            "id": "c03",
+            "kind": "transformation",
+            "description": "Calculate class-wise dissimilarity profile for new observation W.",
+            "required": true,
+            "weight": 1.0,
+            "fatal_if_missing": true,
+            "score": 0.0,
+            "implemented": false,
+            "evidence": {
+              "linked_step_ids": [
+                "s03"
+              ]
+            }
+          },
+          {
+            "id": "c04",
+            "kind": "transformation",
+            "description": "Apply rank transformation to dissimilarity profiles to convert to rank profiles.",
+            "required": true,
+            "weight": 1.0,
+            "fatal_if_missing": true,
+            "score": 1.0,
+            "implemented": true,
+            "evidence": {
+              "linked_step_ids": [
+                "s04"
+              ]
+            }
+          },
+          {
+            "id": "c05",
+            "kind": "estimator",
+            "description": "Apply low-dimensional classifier (e.g., QDA) to rank-transformed profiles for final prediction.",
+            "required": true,
+            "weight": 1.0,
+            "fatal_if_missing": true,
+            "score": 1.0,
+            "implemented": true,
+            "evidence": {
+              "linked_step_ids": [
+                "s05"
+              ]
+            }
+          }
+        ]
+      },
+      "implementation_coverage_score": 0.8,
+      "implemented_components": [
+        "c01",
+        "c02",
+        "c04",
+        "c05"
+      ],
+      "missing_components": [
+        "c03"
+      ],
+      "fatal_missing_components": [
+        "c03"
+      ],
+      "substitutions": [],
+      "algorithm_step_fidelity": 0.8,
+      "source_depth_score": 1.0,
+      "mathematical_specificity_score": 0.75,
+      "implementation_exactness_score": 1.0,
+      "implementation_invariant_score": 0.75,
+      "implementation_invariants": {
+        "status": "ok",
+        "score": 0.75,
+        "n_invariants": 2,
+        "results": [
+          {
+            "name": "rank_transformation_required",
+            "rationale": "The method explicitly relies on rank transformation for robustness, distinguishing it from standard dissimilarity profiling.",
+            "score": 1.0,
+            "passed": true,
+            "required_patterns": [
+              {
+                "pattern": "rank",
+                "matched": true,
+                "error": null
+              },
+              {
+                "pattern": "argsort",
+                "matched": true,
+                "error": null
+              }
+            ],
+            "forbidden_patterns": [
+              {
+                "pattern": "raw_dissimilarities.*classifier",
+                "matched": false,
+                "error": null
+              }
+            ]
+          },
+          {
+            "name": "class_wise_profile_dimension",
+            "rationale": "The profile dimension must equal the number of classes k, not the original feature dimension d.",
+            "score": 0.5,
+            "passed": false,
+            "required_patterns": [
+              {
+                "pattern": "profile.*shape.*k",
+                "matched": true,
+                "error": null
+              },
+              {
+                "pattern": "class.*wise.*mean",
+                "matched": false,
+                "error": null
+              }
+            ],
+            "forbidden_patterns": [
+              {
+                "pattern": "profile.*shape.*d",
+                "matched": false,
+                "error": null
+              }
+            ]
+          }
+        ]
+      },
+      "covered_steps": [
+        "s01",
+        "s02",
+        "s04",
+        "s05"
+      ],
+      "missing_steps": [
+        "s03"
+      ],
+      "assumption_check_recall": 0.333333,
+      "output_contract_recall": 0.0,
+      "fallback_absence": true,
+      "generic_fallback_detected": false,
+      "hard_gate_verdict": "fail_fidelity",
+      "failure_diagnosis": {
+        "primary": "underspecified_mathematical_specification",
+        "reasons": [
+          {
+            "code": "underspecified_mathematical_specification",
+            "severity": "soft",
+            "score": 0.75
+          },
+          {
+            "code": "implementation_invariant_failed",
+            "severity": "soft",
+            "score": 0.75,
+            "evidence": [
+              {
+                "name": "rank_transformation_required",
+                "rationale": "The method explicitly relies on rank transformation for robustness, distinguishing it from standard dissimilarity profiling.",
+                "score": 1.0,
+                "passed": true,
+                "required_patterns": [
+                  {
+                    "pattern": "rank",
+                    "matched": true,
+                    "error": null
+                  },
+                  {
+                    "pattern": "argsort",
+                    "matched": true,
+                    "error": null
+                  }
+                ],
+                "forbidden_patterns": [
+                  {
+                    "pattern": "raw_dissimilarities.*classifier",
+                    "matched": false,
+                    "error": null
+                  }
+                ]
+              },
+              {
+                "name": "class_wise_profile_dimension",
+                "rationale": "The profile dimension must equal the number of classes k, not the original feature dimension d.",
+                "score": 0.5,
+                "passed": false,
+                "required_patterns": [
+                  {
+                    "pattern": "profile.*shape.*k",
+                    "matched": true,
+                    "error": null
+                  },
+                  {
+                    "pattern": "class.*wise.*mean",
+                    "matched": false,
+                    "error": null
+                  }
+                ],
+                "forbidden_patterns": [
+                  {
+                    "pattern": "profile.*shape.*d",
+                    "matched": false,
+                    "error": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "code": "missing_algorithm_steps",
+            "severity": "soft",
+            "score": 0.8
+          },
+          {
+            "code": "partial_component_coverage",
+            "severity": "soft",
+            "score": 0.8,
+            "missing_components": [
+              "c03"
+            ]
+          },
+          {
+            "code": "fatal_method_component_missing",
+            "severity": "hard",
+            "missing_components": [
+              "c03"
+            ]
+          },
+          {
+            "code": "unchecked_or_failed_assumptions",
+            "severity": "soft",
+            "score": 0.3333333333333333
+          }
+        ]
+      },
+      "warnings": [
+        "missing method steps: s03"
+      ]
+    },
+    "rubric_score": 0.20875,
+    "paper_program_fidelity": 0.75,
+    "hard_gate_verdict": "fail_fidelity",
+    "statistical_validation": {
+      "status": "ok",
+      "hypothesis_id": "h_be34021d9252",
+      "method_spec_id": "rank_transformed_dissimilarity_profiles",
+      "terminal_gate": "fail_fidelity",
+      "validation_label": "invalid_method_for_data",
+      "validation_coverage_score": 0.766667,
+      "passed_checks": [
+        "statistical_validation.hypothesis.schema_present",
+        "statistical_validation.hypothesis.outcome_defined",
+        "statistical_validation.hypothesis.inputs_defined",
+        "statistical_validation.hypothesis.assertion_defined",
+        "statistical_validation.estimand.target_defined",
+        "statistical_validation.estimand.relation_defined",
+        "statistical_validation.estimand.method_bound",
+        "statistical_validation.data_applicability.outcome_type_known",
+        "statistical_validation.data_applicability.input_types_known",
+        "statistical_validation.data_applicability.minimum_sample_size",
+        "statistical_validation.data_applicability.method_requirements_present",
+        "statistical_validation.multiplicity.screening_scope_recorded",
+        "statistical_validation.multiplicity.q_value_recorded",
+        "statistical_validation.multiplicity.q_value_within_threshold",
+        "statistical_validation.execution.execution_success",
+        "statistical_validation.execution.paper_program_evaluated",
+        "statistical_validation.paper_fidelity.paper_program_fidelity",
+        "statistical_validation.paper_fidelity.implementation_coverage",
+        "statistical_validation.paper_fidelity.no_generic_fallback",
+        "statistical_validation.robustness.internal_validation_present",
+        "statistical_validation.robustness.condition_number_acceptable",
+        "statistical_validation.data_method_structural_fit.no_structural_complications_detected",
+        "statistical_validation.internal_coherence.math_spec_vocabulary_shared_with_steps"
+      ],
+      "failed_checks": [
+        "statistical_validation.paper_fidelity.rubric_survivor",
+        "statistical_validation.paper_fidelity.no_fatal_missing_components",
+        "statistical_validation.paper_fidelity.fidelity_usable",
+        "statistical_validation.assumption_admissibility.assumptions_checked",
+        "statistical_validation.assumption_admissibility.output_contract_satisfied",
+        "statistical_validation.robustness.stability_present"
+      ],
+      "fatal_failed_checks": [
+        "paper_fidelity.rubric_survivor",
+        "paper_fidelity.no_fatal_missing_components",
+        "paper_fidelity.fidelity_usable"
+      ],
+      "emittable": false,
+      "tree": {
+        "name": "statistical_validation",
+        "description": "Method-conditional validation tree for one structured statistical hypothesis.",
+        "aggregation": "mean",
+        "score": 0.766667,
+        "passed": false,
+        "children": [
+          {
+            "name": "hypothesis",
+            "description": "Structured hypothesis is present and testable.",
+            "aggregation": "all",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "schema_present",
+                "description": "schema present",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "hypothesis_id": "h_be34021d9252"
+                }
+              },
+              {
+                "name": "outcome_defined",
+                "description": "outcome defined",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "inputs_defined",
+                "description": "inputs defined",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "assertion_defined",
+                "description": "assertion defined",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "estimand",
+            "description": "Hypothesis declares a target and a method-defined result can be evaluated.",
+            "aggregation": "all",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "target_defined",
+                "description": "target defined",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "relation_defined",
+                "description": "relation defined",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "method_bound",
+                "description": "method bound",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "data_applicability",
+            "description": "Observed data support the variables and minimum sample properties required by the hypothesis.",
+            "aggregation": "all",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "outcome_type_known",
+                "description": "outcome type known",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "input_types_known",
+                "description": "input types known",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "minimum_sample_size",
+                "description": "minimum sample size",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "n_observations": 748
+                }
+              },
+              {
+                "name": "method_requirements_present",
+                "description": "method requirements present",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "multiplicity",
+            "description": "Candidate-pool multiplicity is recorded and controlled when screening creates multiple hypotheses.",
+            "aggregation": "all",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "screening_scope_recorded",
+                "description": "screening scope recorded",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "n_tests": 20
+                }
+              },
+              {
+                "name": "q_value_recorded",
+                "description": "q value recorded",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "selected_q_value": 0.0
+                }
+              },
+              {
+                "name": "q_value_within_threshold",
+                "description": "q value within threshold",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "threshold": 0.1
+                }
+              }
+            ]
+          },
+          {
+            "name": "execution",
+            "description": "Generated program executed and emitted a parseable result.",
+            "aggregation": "all",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "execution_success",
+                "description": "execution success",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "paper_program_evaluated",
+                "description": "paper program evaluated",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "paper_fidelity",
+            "description": "Generated program implements enough of the extracted method specification to support statistical use.",
+            "aggregation": "all",
+            "score": 0.0,
+            "passed": false,
+            "children": [
+              {
+                "name": "rubric_survivor",
+                "description": "rubric survivor",
+                "score": 0.0,
+                "passed": false,
+                "children": [],
+                "evidence": {
+                  "hard_gate_verdict": "fail_fidelity"
+                }
+              },
+              {
+                "name": "paper_program_fidelity",
+                "description": "paper program fidelity",
+                "score": 0.75,
+                "passed": true,
+                "threshold": 0.0,
+                "children": [],
+                "evidence": {
+                  "paper_program_fidelity": 0.75,
+                  "fidelity_label": "partial_reproduction_fatal_gap",
+                  "diagnostic_only": true
+                }
+              },
+              {
+                "name": "implementation_coverage",
+                "description": "implementation coverage",
+                "score": 0.8,
+                "passed": true,
+                "threshold": 0.8,
+                "children": [],
+                "evidence": {
+                  "implementation_coverage_score": 0.8,
+                  "implemented_components": [
+                    "c01",
+                    "c02",
+                    "c04",
+                    "c05"
+                  ],
+                  "missing_components": [
+                    "c03"
+                  ],
+                  "fatal_missing_components": [
+                    "c03"
+                  ],
+                  "substitutions": []
+                }
+              },
+              {
+                "name": "no_fatal_missing_components",
+                "description": "no fatal missing components",
+                "score": 0.0,
+                "passed": false,
+                "children": [],
+                "evidence": {
+                  "fatal_missing_components": [
+                    "c03"
+                  ]
+                }
+              },
+              {
+                "name": "no_generic_fallback",
+                "description": "no generic fallback",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "fidelity_usable",
+                "description": "fidelity usable",
+                "score": 0.0,
+                "passed": false,
+                "children": [],
+                "evidence": {
+                  "minimum_component_coverage": 0.8
+                }
+              }
+            ]
+          },
+          {
+            "name": "assumption_admissibility",
+            "description": "Method assumptions and output contract are explicitly checked by the execution output.",
+            "aggregation": "all",
+            "score": 0.0,
+            "passed": false,
+            "children": [
+              {
+                "name": "assumptions_checked",
+                "description": "assumptions checked",
+                "score": 0.333333,
+                "passed": false,
+                "threshold": 1.0,
+                "children": [],
+                "evidence": {
+                  "recall": 0.333333
+                }
+              },
+              {
+                "name": "output_contract_satisfied",
+                "description": "output contract satisfied",
+                "score": 0.0,
+                "passed": false,
+                "threshold": 1.0,
+                "children": [],
+                "evidence": {
+                  "recall": 0.0
+                }
+              }
+            ]
+          },
+          {
+            "name": "robustness",
+            "description": "Statistical robustness diagnostics pass method-conditional thresholds.",
+            "aggregation": "mean",
+            "score": 0.666667,
+            "passed": false,
+            "children": [
+              {
+                "name": "internal_validation_present",
+                "description": "internal validation present",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "stability_present",
+                "description": "stability present",
+                "score": 0.0,
+                "passed": false,
+                "children": [],
+                "evidence": {}
+              },
+              {
+                "name": "condition_number_acceptable",
+                "description": "condition number acceptable",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "condition_number": null
+                }
+              }
+            ]
+          },
+          {
+            "name": "data_method_structural_fit",
+            "description": "Extracted method acknowledges structural properties actually present in the data.",
+            "aggregation": "mean",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "no_structural_complications_detected",
+                "description": "no structural complications detected",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {}
+              }
+            ]
+          },
+          {
+            "name": "internal_coherence",
+            "description": "Mathematical specification and procedural steps describe the same method.",
+            "aggregation": "mean",
+            "score": 1.0,
+            "passed": true,
+            "children": [
+              {
+                "name": "math_spec_vocabulary_shared_with_steps",
+                "description": "math spec vocabulary shared with steps",
+                "score": 1.0,
+                "passed": true,
+                "children": [],
+                "evidence": {
+                  "math_terms": [
+                    "applied",
+                    "assign",
+                    "between",
+                    "choice",
+                    "class",
+                    "class-wise",
+                    "classifier",
+                    "dissimilarities",
+                    "dissimilarity",
+                    "low-dimensional",
+                    "mean",
+                    "metric",
+                    "observation",
+                    "observations",
+                    "parameters",
+                    "predicted",
+                    "profile",
+                    "rank-transformed",
+                    "training",
+                    "where"
+                  ],
+                  "shared_terms": [
+                    "class",
+                    "class-wise",
+                    "classifier",
+                    "dissimilarities",
+                    "dissimilarity",
+                    "low-dimensional",
+                    "mean",
+                    "metric",
+                    "observation",
+                    "observations",
+                    "profile",
+                    "rank-transformed",
+                    "training"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "terminal_gate": "fail_fidelity",
+        "validation_label": "invalid_method_for_data",
+        "validation_coverage_score": 0.766667,
+        "passed_checks": [
+          "statistical_validation.hypothesis.schema_present",
+          "statistical_validation.hypothesis.outcome_defined",
+          "statistical_validation.hypothesis.inputs_defined",
+          "statistical_validation.hypothesis.assertion_defined",
+          "statistical_validation.estimand.target_defined",
+          "statistical_validation.estimand.relation_defined",
+          "statistical_validation.estimand.method_bound",
+          "statistical_validation.data_applicability.outcome_type_known",
+          "statistical_validation.data_applicability.input_types_known",
+          "statistical_validation.data_applicability.minimum_sample_size",
+          "statistical_validation.data_applicability.method_requirements_present",
+          "statistical_validation.multiplicity.screening_scope_recorded",
+          "statistical_validation.multiplicity.q_value_recorded",
+          "statistical_validation.multiplicity.q_value_within_threshold",
+          "statistical_validation.execution.execution_success",
+          "statistical_validation.execution.paper_program_evaluated",
+          "statistical_validation.paper_fidelity.paper_program_fidelity",
+          "statistical_validation.paper_fidelity.implementation_coverage",
+          "statistical_validation.paper_fidelity.no_generic_fallback",
+          "statistical_validation.robustness.internal_validation_present",
+          "statistical_validation.robustness.condition_number_acceptable",
+          "statistical_validation.data_method_structural_fit.no_structural_complications_detected",
+          "statistical_validation.internal_coherence.math_spec_vocabulary_shared_with_steps"
+        ],
+        "failed_checks": [
+          "statistical_validation.paper_fidelity.rubric_survivor",
+          "statistical_validation.paper_fidelity.no_fatal_missing_components",
+          "statistical_validation.paper_fidelity.fidelity_usable",
+          "statistical_validation.assumption_admissibility.assumptions_checked",
+          "statistical_validation.assumption_admissibility.output_contract_satisfied",
+          "statistical_validation.robustness.stability_present"
+        ],
+        "fatal_failed_checks": [
+          "paper_fidelity.rubric_survivor",
+          "paper_fidelity.no_fatal_missing_components",
+          "paper_fidelity.fidelity_usable"
+        ],
+        "emittable": false,
+        "hypothesis_id": "h_be34021d9252",
+        "method_spec_id": "rank_transformed_dissimilarity_profiles"
+      }
+    },
+    "statistical_validation_gate": "fail_fidelity"
+  },
+  "expected_paper_program_evaluation": {
+    "status": "ok",
+    "method_spec_id": "rank_transformed_dissimilarity_profiles",
+    "rubric_tree": {
+      "name": "method_replication",
+      "description": "Paper-derived method is implemented, executed, and validated.",
+      "aggregation": "gated",
+      "score": 0.20875,
+      "passed": false,
+      "children": [
+        {
+          "name": "execution",
+          "description": "Program runs safely and emits parseable schema-conforming output.",
+          "aggregation": "all",
+          "score": 1.0,
+          "passed": true,
+          "children": [
+            {
+              "name": "static_validity",
+              "description": "Program passes static validation.",
+              "score": 1.0,
+              "passed": true,
+              "children": [],
+              "evidence": {}
+            },
+            {
+              "name": "sandbox_execution",
+              "description": "Program executes successfully in the sandbox.",
+              "score": 1.0,
+              "passed": true,
+              "children": [],
+              "evidence": {}
+            },
+            {
+              "name": "schema_validity",
+              "description": "Program emits required JSON fields.",
+              "score": 1.0,
+              "passed": true,
+              "children": [],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "name": "paper_program_fidelity",
+          "description": "Program implements the paper-derived method components with measured partial coverage.",
+          "aggregation": "fidelity_components",
+          "score": 0.835,
+          "passed": false,
+          "children": [
+            {
+              "name": "source_depth",
+              "description": "Method specification is extracted from full text or a method section rather than abstract-only evidence.",
+              "score": 1.0,
+              "passed": true,
+              "children": [],
+              "evidence": {
+                "evidence_depth": "full_text"
+              }
+            },
+            {
+              "name": "mathematical_specificity",
+              "description": "Method specification contains enough mathematical structure to constrain implementation.",
+              "score": 0.75,
+              "passed": false,
+              "children": [],
+              "evidence": {
+                "objective": "",
+                "loss": "",
+                "decision_rule": "Assign W to the class predicted by the low-dimensional classifier (e.g., QDA) applied to the rank-transformed dissimilarity profile of W.",
+                "parameters": [
+                  "class-wise mean dissimilarities for training observations"
+                ],
+                "tuning_parameters": [
+                  "choice of dissimilarity metric",
+                  "choice of low-dimensional classifier (e.g., QDA parameters)"
+                ],
+                "estimator": "Class-wise dissimilarity profile: For observation i in class i, profile D_i = (D_{i1}, D_{i2}, ..., D_{ik}) where D_{ij} is the mean dissimilarity between observation i and all observations in class j."
+              }
+            },
+            {
+              "name": "implementation_exactness",
+              "description": "Execution does not report proxy, surrogate, or approximation substitutions for missing paper details.",
+              "score": 1.0,
+              "passed": true,
+              "children": [],
+              "evidence": {
+                "method_spec_warnings": [
+                  "The text mentions 'standard low-dimensional methods such as quadratic discriminant analysis' but does not provide the full mathematical derivation of the QDA step. The implementation assumes QDA or similar is used.",
+                  "The choice of dissimilarity metric is flexible (Euclidean, Manhattan, etc.) and not fixed by the text. The implementation must allow this to be specified.",
+                  "The text does not specify the exact method for handling ties in rank transformation."
+                ],
+                "execution_warnings": [
+                  "Outcome was binarized at median to create two classes for classification.",
+                  "Predictor is 1-dimensional; high-dimensional geometry assumption may not hold.",
+                  "No new observation provided; step s03 omitted.",
+                  "robustness_missing_stability_metric"
+                ]
+              }
+            },
+            {
+              "name": "implementation_components",
+              "description": "Required method components are implemented or explicitly diagnosed as missing.",
+              "score": 0.8,
+              "passed": false,
+              "children": [],
+              "evidence": {
+                "status": "ok",
+                "coverage_score": 0.8,
+                "n_components": 5,
+                "implemented_components": [
+                  "c01",
+                  "c02",
+                  "c04",
+                  "c05"
+                ],
+                "missing_components": [
+                  "c03"
+                ],
+                "fatal_missing_components": [
+                  "c03"
+                ],
+                "substitutions": [],
+                "substitution_penalty": 0.0,
+                "component_results": [
+                  {
+                    "id": "c01",
+                    "kind": "algorithm_step",
+                    "description": "Compute pairwise dissimilarity matrix for training data.",
+                    "required": true,
+                    "weight": 1.0,
+                    "fatal_if_missing": true,
+                    "score": 1.0,
+                    "implemented": true,
+                    "evidence": {
+                      "linked_step_ids": [
+                        "s01"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "c02",
+                    "kind": "transformation",
+                    "description": "Calculate class-wise dissimilarity profiles for training observations.",
+                    "required": true,
+                    "weight": 1.0,
+                    "fatal_if_missing": true,
+                    "score": 1.0,
+                    "implemented": true,
+                    "evidence": {
+                      "linked_step_ids": [
+                        "s02"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "c03",
+                    "kind": "transformation",
+                    "description": "Calculate class-wise dissimilarity profile for new observation W.",
+                    "required": true,
+                    "weight": 1.0,
+                    "fatal_if_missing": true,
+                    "score": 0.0,
+                    "implemented": false,
+                    "evidence": {
+                      "linked_step_ids": [
+                        "s03"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "c04",
+                    "kind": "transformation",
+                    "description": "Apply rank transformation to dissimilarity profiles to convert to rank profiles.",
+                    "required": true,
+                    "weight": 1.0,
+                    "fatal_if_missing": true,
+                    "score": 1.0,
+                    "implemented": true,
+                    "evidence": {
+                      "linked_step_ids": [
+                        "s04"
+                      ]
+                    }
+                  },
+                  {
+                    "id": "c05",
+                    "kind": "estimator",
+                    "description": "Apply low-dimensional classifier (e.g., QDA) to rank-transformed profiles for final prediction.",
+                    "required": true,
+                    "weight": 1.0,
+                    "fatal_if_missing": true,
+                    "score": 1.0,
+                    "implemented": true,
+                    "evidence": {
+                      "linked_step_ids": [
+                        "s05"
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "implementation_invariants",
+              "description": "Generated code satisfies paper-derived deterministic implementation invariants.",
+              "score": 0.75,
+              "passed": false,
+              "children": [],
+              "evidence": {
+                "status": "ok",
+                "score": 0.75,
+                "n_invariants": 2,
+                "results": [
+                  {
+                    "name": "rank_transformation_required",
+                    "rationale": "The method explicitly relies on rank transformation for robustness, distinguishing it from standard dissimilarity profiling.",
+                    "score": 1.0,
+                    "passed": true,
+                    "required_patterns": [
+                      {
+                        "pattern": "rank",
+                        "matched": true,
+                        "error": null
+                      },
+                      {
+                        "pattern": "argsort",
+                        "matched": true,
+                        "error": null
+                      }
+                    ],
+                    "forbidden_patterns": [
+                      {
+                        "pattern": "raw_dissimilarities.*classifier",
+                        "matched": false,
+                        "error": null
+                      }
+                    ]
+                  },
+                  {
+                    "name": "class_wise_profile_dimension",
+                    "rationale": "The profile dimension must equal the number of classes k, not the original feature dimension d.",
+                    "score": 0.5,
+                    "passed": false,
+                    "required_patterns": [
+                      {
+                        "pattern": "profile.*shape.*k",
+                        "matched": true,
+                        "error": null
+                      },
+                      {
+                        "pattern": "class.*wise.*mean",
+                        "matched": false,
+                        "error": null
+                      }
+                    ],
+                    "forbidden_patterns": [
+                      {
+                        "pattern": "profile.*shape.*d",
+                        "matched": false,
+                        "error": null
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "name": "algorithm_steps",
+              "description": "Ordered paper-derived algorithm steps are implemented.",
+              "aggregation": "mean",
+              "score": 0.8,
+              "passed": false,
+              "children": [
+                {
+                  "name": "s01",
+                  "description": "Construct a pairwise dissimilarity matrix among the training observations using a chosen metric (e.g., Euclidean).",
+                  "score": 1.0,
+                  "passed": true,
+                  "children": [],
+                  "evidence": {
+                    "required_output": "training_dissimilarity_matrix",
+                    "source_span": "Section 2.2: construct a pairwise dissimilarity matrix among the training observations"
+                  }
+                },
+                {
+                  "name": "s02",
+                  "description": "Summarize each training observation by its class-wise dissimilarity profile. For an observation in class i, compute the vector of mean dissimilarities to all classes j=1..k.",
+                  "score": 1.0,
+                  "passed": true,
+                  "children": [],
+                  "evidence": {
+                    "required_output": "training_profiles",
+                    "source_span": "Section 2.2: summarize each observation by its class-wise dissimilarity profile"
+                  }
+                },
+                {
+                  "name": "s03",
+                  "description": "For a new observation W, compute its class-wise dissimilarity profile by calculating its mean dissimilarity to each of the k classes in the training set.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {
+                    "required_output": "new_observation_profile",
+                    "source_span": "Section 2.2: compute the corresponding class-wise dissimilarity profile for a new observation"
+                  }
+                },
+                {
+                  "name": "s04",
+                  "description": "Apply a rank transformation to the dissimilarity profiles. Convert the dissimilarity values into ranks within each class dimension to improve robustness.",
+                  "score": 1.0,
+                  "passed": true,
+                  "children": [],
+                  "evidence": {
+                    "required_output": "rank_transformed_profiles",
+                    "source_span": "Abstract: introduce a rank-transformed algorithm that converts dissimilarities into class-wise rank profiles"
+                  }
+                },
+                {
+                  "name": "s05",
+                  "description": "Classify the new observation in the resulting low-dimensional rank profile space using a standard low-dimensional classifier (e.g., Quadratic Discriminant Analysis).",
+                  "score": 1.0,
+                  "passed": true,
+                  "children": [],
+                  "evidence": {
+                    "required_output": "predicted_class",
+                    "source_span": "Abstract: yielding a compact representation for classification... Section 2.2: classify the new observation in the resulting low-dimensional profile space"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "generic_fallback_absence",
+              "description": "Implementation is not a familiar default substituted for the paper method.",
+              "score": 1.0,
+              "passed": true,
+              "children": [],
+              "evidence": {}
+            }
+          ]
+        },
+        {
+          "name": "admissibility",
+          "description": "Assumptions and output contract are checked.",
+          "aggregation": "mean",
+          "score": 0.166666,
+          "passed": false,
+          "children": [
+            {
+              "name": "assumptions",
+              "description": "Paper assumptions are checked by the execution output.",
+              "aggregation": "mean",
+              "score": 0.333333,
+              "passed": false,
+              "children": [
+                {
+                  "name": "independent_observations",
+                  "description": "The observations are assumed independent.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {
+                    "id": "a01"
+                  }
+                },
+                {
+                  "name": "labeled_training_data",
+                  "description": "Availability of a labeled training set S with observations Z and class labels g.",
+                  "score": 1.0,
+                  "passed": true,
+                  "children": [],
+                  "evidence": {
+                    "id": "a02"
+                  }
+                },
+                {
+                  "name": "high_dimensional_geometry_signal",
+                  "description": "High-dimensional geometry induces systematic within-class and between-class dissimilarity patterns under distributional changes (location, scale, etc.).",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {
+                    "id": "a03"
+                  }
+                }
+              ]
+            },
+            {
+              "name": "output_contract",
+              "description": "Required outputs are present.",
+              "aggregation": "mean",
+              "score": 0.0,
+              "passed": false,
+              "children": [
+                {
+                  "name": "predicted_class",
+                  "description": "Execution output satisfies contract key predicted_class.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {}
+                },
+                {
+                  "name": "rank_transformed_profiles",
+                  "description": "Execution output satisfies contract key rank_transformed_profiles.",
+                  "score": 0.0,
+                  "passed": false,
+                  "children": [],
+                  "evidence": {}
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "hard_gate_verdict": "fail_fidelity",
+      "missing_steps": [
+        "s03"
+      ]
+    },
+    "rubric_score": 0.20875,
+    "static_validity": true,
+    "execution_success": true,
+    "schema_validity": true,
+    "paper_program_fidelity": 0.75,
+    "fidelity_label": "partial_reproduction_fatal_gap",
+    "implementation_coverage": {
+      "status": "ok",
+      "coverage_score": 0.8,
+      "n_components": 5,
+      "implemented_components": [
+        "c01",
+        "c02",
+        "c04",
+        "c05"
+      ],
+      "missing_components": [
+        "c03"
+      ],
+      "fatal_missing_components": [
+        "c03"
+      ],
+      "substitutions": [],
+      "substitution_penalty": 0.0,
+      "component_results": [
+        {
+          "id": "c01",
+          "kind": "algorithm_step",
+          "description": "Compute pairwise dissimilarity matrix for training data.",
+          "required": true,
+          "weight": 1.0,
+          "fatal_if_missing": true,
+          "score": 1.0,
+          "implemented": true,
+          "evidence": {
+            "linked_step_ids": [
+              "s01"
+            ]
+          }
+        },
+        {
+          "id": "c02",
+          "kind": "transformation",
+          "description": "Calculate class-wise dissimilarity profiles for training observations.",
+          "required": true,
+          "weight": 1.0,
+          "fatal_if_missing": true,
+          "score": 1.0,
+          "implemented": true,
+          "evidence": {
+            "linked_step_ids": [
+              "s02"
+            ]
+          }
+        },
+        {
+          "id": "c03",
+          "kind": "transformation",
+          "description": "Calculate class-wise dissimilarity profile for new observation W.",
+          "required": true,
+          "weight": 1.0,
+          "fatal_if_missing": true,
+          "score": 0.0,
+          "implemented": false,
+          "evidence": {
+            "linked_step_ids": [
+              "s03"
+            ]
+          }
+        },
+        {
+          "id": "c04",
+          "kind": "transformation",
+          "description": "Apply rank transformation to dissimilarity profiles to convert to rank profiles.",
+          "required": true,
+          "weight": 1.0,
+          "fatal_if_missing": true,
+          "score": 1.0,
+          "implemented": true,
+          "evidence": {
+            "linked_step_ids": [
+              "s04"
+            ]
+          }
+        },
+        {
+          "id": "c05",
+          "kind": "estimator",
+          "description": "Apply low-dimensional classifier (e.g., QDA) to rank-transformed profiles for final prediction.",
+          "required": true,
+          "weight": 1.0,
+          "fatal_if_missing": true,
+          "score": 1.0,
+          "implemented": true,
+          "evidence": {
+            "linked_step_ids": [
+              "s05"
+            ]
+          }
+        }
+      ]
+    },
+    "implementation_coverage_score": 0.8,
+    "implemented_components": [
+      "c01",
+      "c02",
+      "c04",
+      "c05"
+    ],
+    "missing_components": [
+      "c03"
+    ],
+    "fatal_missing_components": [
+      "c03"
+    ],
+    "substitutions": [],
+    "algorithm_step_fidelity": 0.8,
+    "source_depth_score": 1.0,
+    "mathematical_specificity_score": 0.75,
+    "implementation_exactness_score": 1.0,
+    "implementation_invariant_score": 0.75,
+    "implementation_invariants": {
+      "status": "ok",
+      "score": 0.75,
+      "n_invariants": 2,
+      "results": [
+        {
+          "name": "rank_transformation_required",
+          "rationale": "The method explicitly relies on rank transformation for robustness, distinguishing it from standard dissimilarity profiling.",
+          "score": 1.0,
+          "passed": true,
+          "required_patterns": [
+            {
+              "pattern": "rank",
+              "matched": true,
+              "error": null
+            },
+            {
+              "pattern": "argsort",
+              "matched": true,
+              "error": null
+            }
+          ],
+          "forbidden_patterns": [
+            {
+              "pattern": "raw_dissimilarities.*classifier",
+              "matched": false,
+              "error": null
+            }
+          ]
+        },
+        {
+          "name": "class_wise_profile_dimension",
+          "rationale": "The profile dimension must equal the number of classes k, not the original feature dimension d.",
+          "score": 0.5,
+          "passed": false,
+          "required_patterns": [
+            {
+              "pattern": "profile.*shape.*k",
+              "matched": true,
+              "error": null
+            },
+            {
+              "pattern": "class.*wise.*mean",
+              "matched": false,
+              "error": null
+            }
+          ],
+          "forbidden_patterns": [
+            {
+              "pattern": "profile.*shape.*d",
+              "matched": false,
+              "error": null
+            }
+          ]
+        }
+      ]
+    },
+    "covered_steps": [
+      "s01",
+      "s02",
+      "s04",
+      "s05"
+    ],
+    "missing_steps": [
+      "s03"
+    ],
+    "assumption_check_recall": 0.333333,
+    "output_contract_recall": 0.0,
+    "fallback_absence": true,
+    "generic_fallback_detected": false,
+    "hard_gate_verdict": "fail_fidelity",
+    "failure_diagnosis": {
+      "primary": "underspecified_mathematical_specification",
+      "reasons": [
+        {
+          "code": "underspecified_mathematical_specification",
+          "severity": "soft",
+          "score": 0.75
+        },
+        {
+          "code": "implementation_invariant_failed",
+          "severity": "soft",
+          "score": 0.75,
+          "evidence": [
+            {
+              "name": "rank_transformation_required",
+              "rationale": "The method explicitly relies on rank transformation for robustness, distinguishing it from standard dissimilarity profiling.",
+              "score": 1.0,
+              "passed": true,
+              "required_patterns": [
+                {
+                  "pattern": "rank",
+                  "matched": true,
+                  "error": null
+                },
+                {
+                  "pattern": "argsort",
+                  "matched": true,
+                  "error": null
+                }
+              ],
+              "forbidden_patterns": [
+                {
+                  "pattern": "raw_dissimilarities.*classifier",
+                  "matched": false,
+                  "error": null
+                }
+              ]
+            },
+            {
+              "name": "class_wise_profile_dimension",
+              "rationale": "The profile dimension must equal the number of classes k, not the original feature dimension d.",
+              "score": 0.5,
+              "passed": false,
+              "required_patterns": [
+                {
+                  "pattern": "profile.*shape.*k",
+                  "matched": true,
+                  "error": null
+                },
+                {
+                  "pattern": "class.*wise.*mean",
+                  "matched": false,
+                  "error": null
+                }
+              ],
+              "forbidden_patterns": [
+                {
+                  "pattern": "profile.*shape.*d",
+                  "matched": false,
+                  "error": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "code": "missing_algorithm_steps",
+          "severity": "soft",
+          "score": 0.8
+        },
+        {
+          "code": "partial_component_coverage",
+          "severity": "soft",
+          "score": 0.8,
+          "missing_components": [
+            "c03"
+          ]
+        },
+        {
+          "code": "fatal_method_component_missing",
+          "severity": "hard",
+          "missing_components": [
+            "c03"
+          ]
+        },
+        {
+          "code": "unchecked_or_failed_assumptions",
+          "severity": "soft",
+          "score": 0.3333333333333333
+        }
+      ]
+    },
+    "warnings": [
+      "missing method steps: s03"
+    ]
+  }
+}
