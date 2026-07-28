@@ -1,46 +1,15 @@
 # ARIA
 
-An autonomous closed-loop discovery agent for statistical methodology. Given a tabular dataset, ARIA retrieves relevant methodology literature from arXiv, extracts a structured, paper-derived method specification, generates and executes bounded analysis code against the data, and validates the resulting finding through a non-compensable statistical admissibility gate before deciding to emit a finding or abstain. A retrieval query policy is trained online with GRPO against this pipeline's own terminal reward.
+Ask a language model to analyze a dataset and it will confidently reach for the same three or four familiar methods, regardless of what the data actually looks like or what the specialist literature on the problem actually recommends. It will happily tell you it checked the assumptions. It usually didn't. And if the analysis is wrong, nothing in the loop is built to notice, because nothing is checking that the model's claims match what it actually ran.
 
-## Structure
+That's the problem ARIA is built to answer. Not "can an LLM write pandas code" — it obviously can — but whether an autonomous agent can be trusted to do the more uncomfortable parts of science: go find out what's actually known about a problem, implement that faithfully instead of reaching for a shortcut, hold the result to a standard that can't be gamed by looking good on some other axis, and say "I don't know" out loud when it doesn't know.
 
-- `scripts/` — the pipeline package
-  - `run_one_loop.py` — entry point; runs one closed-loop discovery trajectory over a dataset
-  - `core/` — trajectory state, telemetry
-  - `retrieval/` — arXiv search index, literature retrieval, method-gating
-  - `extraction/` — paper-to-method-spec summarization, method guidance, hypothesis construction
-  - `coding/` — bounded analysis-code generation, sandboxed execution, repair
-  - `validation/` — the statistical admissibility gate and rubric-tree scoring
-  - `reward/` — terminal trajectory reward
-  - `policy/` — action-dispatch and query policies (deterministic, OpenRouter, in-training served model)
-  - `training/` — online GRPO training (`grpo_query_policy.py`) and flagship-model baseline rollouts (`rollout_baseline.py`)
-  - `evaluation/` — builds the GRPO-vs-baseline comparison table and paper figures from real rollout data
-  - `run_baseline_batch.sh` — batch-generates flagship-model baseline rollouts across every dataset
-- `tests/` — pytest suite: unit tests on crafted inputs, regression tests against real historical rollout fixtures, and real (unmocked) integration tests for the sandbox/subprocess execution path
-- `data/raw/` — 17 benchmark tabular datasets used for evaluation
-- `results/tables/` — real evaluation output: the 41-metric GRPO-vs-flagship-baseline comparison table
-- `docs/` — project docs, including `RUNBOOK.md`, the end-to-end reproduction runbook (arXiv corpus setup, baseline rollouts, GRPO training on a rented GPU, the comparison table, figures, and paper compilation)
+Concretely, ARIA is a closed loop. Given a tabular dataset, it retrieves real methodology papers from arXiv relevant to the data in front of it — not a fixed shortlist, an actual search grounded in what the data looks like. It extracts a structured specification from whatever paper it lands on: the algorithm's steps, its assumptions, and the output it's obligated to produce. It writes bounded Python code implementing that specification, runs it in a sandboxed subprocess, and checks the result against a validation gate that is deliberately non-compensable — a fatal violated assumption can't be offset by a strong effect size somewhere else in the same rubric tree, the way an average would quietly let it. Only after clearing that gate does the agent decide whether to emit a finding or abstain.
 
-## Quick start
+That decision — emit or abstain — sits downstream of the one step that most determines everything else: the query the agent issues to go find methodology in the first place. A query policy is trained online with GRPO directly against this pipeline's own terminal reward, using the pipeline's real successes and failures as the signal, rather than a hand-labeled set of "good queries."
 
-```bash
-python -m pip install pandas numpy scipy scikit-learn statsmodels linearmodels networkx requests pdfplumber
-```
+![ARIA pipeline overview](docs/aria-overview.png)
 
-A real rollout needs the arXiv corpus set up first — `run_one_loop.py` retrieves methodology literature from it on every trajectory, and without `--arxiv-snapshot`/`--arxiv-index` pointing at real files it fails fast (`FileNotFoundError` from `retrieve_local`) and abstains after one action. See `docs/RUNBOOK.md` section 2 to build the corpus, then:
+None of this is free, and the honest failure mode matters as much as the honest success. When this system abstains constantly, is that the model failing, or the evaluation criterion being too blunt to tell success from failure apart? Chasing down that distinction — and building a gate that can actually tell the difference — is most of what makes this an open research problem rather than a straightforward engineering exercise.
 
-```bash
-python scripts/run_one_loop.py \
-  --data data/raw/blood_transfusion.csv \
-  --out /tmp/run.json \
-  --arxiv-snapshot /path/to/arxiv-metadata-oai-snapshot.json \
-  --arxiv-index /path/to/arxiv_fts.sqlite
-```
-
-That runs the deterministic policy end to end against one dataset with no external API calls (code generation still requires `--code-policy openrouter`, since only that policy is implemented). Passing `--policy openrouter --query-policy openrouter --paper-summarizer openrouter --code-policy openrouter` instead drives every decision point with an LLM via OpenRouter (requires `OPENROUTER_API_KEY`); see `docs/RUNBOOK.md` for the full flag set and how to reproduce every result end to end, including GRPO training.
-
-## Tests
-
-```bash
-python -m pytest tests/
-```
+For how to actually run this end to end — the arXiv corpus, baseline rollouts, GRPO training on a rented GPU, the comparison table, the figures, the compiled paper — see `docs/RUNBOOK.md`.
